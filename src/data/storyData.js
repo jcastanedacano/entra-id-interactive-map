@@ -76,7 +76,14 @@ export const SV_COMPONENTS = {
   'intune':             { cat:'ecosystem', name:'Intune', x:870, y:305, desc:'Compliant device signal.' },
   'defender-identity':  { cat:'ecosystem', name:'Defender for Identity', x:870, y:380, desc:'ITDR signals.' },
   'sentinel':           { cat:'ecosystem', name:'Sentinel', x:870, y:450, desc:'SIEM + UEBA.' },
-  'purview':            { cat:'ecosystem', name:'Purview', x:770, y:525, desc:'Adaptive Protection + container labels.' }
+  'purview':            { cat:'ecosystem', name:'Purview', x:770, y:525, desc:'Adaptive Protection + container labels.' },
+
+  // Security Copilot platform + 4 Entra agents (Microsoft Nov 2025 blog)
+  'security-copilot':    { cat:'ecosystem', name:'Security Copilot', x:870, y:525, desc:'AI assistant base · KQL · summaries.' },
+  'agent-ca-optim':       { cat:'governance', name:'CA Optimization Agent', x:600, y:525, desc:'Detects CA gaps + missing ZT policies.' },
+  'agent-risky-user':     { cat:'protection', name:'Risky User Agent', x:430, y:450, desc:'Proactive remediation of risky users.' },
+  'agent-access-review':  { cat:'governance', name:'Access Review Agent', x:90, y:525, desc:'Recommends approve/remove for reviewers.' },
+  'agent-app-lifecycle':  { cat:'governance', name:'App Lifecycle Agent', x:260, y:525, desc:'Reduce SP sprawl + recertify.' }
 }
 
 export function pickNodes(ids) {

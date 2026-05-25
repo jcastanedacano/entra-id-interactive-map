@@ -1,7 +1,7 @@
 // Story View · 3 historias · Use cases (ataques y defensas)
 import { pickNodes as pick } from "../storyData.js"
 
-export const STORY_ORDER = ['uc-aitm','uc-pwd-spray','uc-workload-leak']
+export const STORY_ORDER = ['uc-aitm','uc-pwd-spray','uc-workload-leak','agent-ca-optim','agent-risky-response']
 
 export const STORIES = {
 
@@ -141,6 +141,100 @@ export const STORIES = {
           {a:'risk-policies', b:'service-principals', t:'policy', label:'block on risk'}
         ],
         annotations:[{x:600, y:200, arrow:'left', tone:'default', body:'<b>Higiene</b>'}]
+      }
+    ]
+  },
+
+  'agent-ca-optim': {
+    id:'agent-ca-optim',
+    title:'CA Optimization Agent · el agente que cubre los huecos',
+    tag:'Use case',
+    blurb:'Security Copilot agent (Preview) que detecta gaps de CA y propone policies con un click.',
+    duration:'3 escenas · ~3 min',
+    primaryCat:'governance',
+    nodes: pick(['agent-ca-optim','security-copilot','conditional-access','sign-in-logs','sentinel']),
+    scenes: [
+      {
+        id:1, chip:'Escena 1 · El hueco invisible',
+        heading:'El audit dice "47 apps sin Conditional Access". Nadie tiene tiempo.',
+        narrative:'El equipo IAM creció 4x en 18 meses. Apps nuevas se onboardean día con día y nadie revisa si quedan dentro de scope CA. Privileged users en exclusiones temporales que nunca expiran. Policies obsoletas heredadas de 2019.',
+        insight:'Sin auditoría continua, el motor Zero Trust tiene huecos crecientes invisibles. El SOC no ve lo que no tiene policy.',
+        introNodes:['conditional-access','sign-in-logs'],
+        introEdges:[{a:'conditional-access', b:'sign-in-logs', t:'data', label:'policy decisions'}],
+        annotations:[{x:260, y:50, arrow:'down', tone:'default', body:'<b>47 apps sin CA</b>'}]
+      },
+      {
+        id:2, chip:'Escena 2 · El agente analiza',
+        heading:'CA Optimization Agent lee policies + telemetría + Zero Trust catalog.',
+        narrative:'<b>Security Copilot</b> + <b>CA Optimization Agent</b> corren autónomamente. El agente cruza las CA policies actuales con sign-in logs (qué apps/usuarios pasan), detecta gaps, overlap, exclusiones obsoletas, y compara contra el blueprint Zero Trust de Microsoft.',
+        insight:'No es un escaneo one-shot. El agente trabaja continuo. Cada app nueva en sign-in logs aparece en su queue.',
+        introNodes:['security-copilot','agent-ca-optim'],
+        introEdges:[
+          {a:'security-copilot', b:'agent-ca-optim', t:'data', label:'platform'},
+          {a:'conditional-access', b:'agent-ca-optim', t:'data', label:'policies analyzed'},
+          {a:'sign-in-logs', b:'agent-ca-optim', t:'data', label:'telemetry baseline'}
+        ],
+        annotations:[{x:600, y:50, arrow:'down', tone:'edge-policy', body:'<b>Agent analyzes</b>'}]
+      },
+      {
+        id:3, chip:'Escena 3 · One-click apply',
+        heading:'Admin aprueba la sugerencia. Evidence en Sentinel.',
+        narrative:'El agente propone: "Crear CA policy para 12 apps SaaS sin cobertura, requiring MFA + compliant device". Admin abre el agente, revisa la lógica + impact analysis, aprueba con un click. La policy se crea en Entra. Sign-in Logs + <b>Sentinel</b> capturan toda la cadena (agente sugiere → admin aprueba → policy aplica → primer block).',
+        insight:'El humano sigue en el loop para la decisión. El trabajo aburrido (descubrir el gap, redactar policy) lo hace el agente. ROI inmediato en time-to-coverage.',
+        introNodes:['sentinel'],
+        introEdges:[
+          {a:'agent-ca-optim', b:'conditional-access', t:'policy', label:'apply (approved)'},
+          {a:'agent-ca-optim', b:'sentinel', t:'data', label:'audit'},
+          {a:'conditional-access', b:'sign-in-logs', t:'data', label:'new blocks'}
+        ],
+        annotations:[{x:430, y:200, arrow:'left', tone:'edge-policy', body:'<b>One-click apply</b>'}]
+      }
+    ]
+  },
+
+  'agent-risky-response': {
+    id:'agent-risky-response',
+    title:'Risky User → remediación autónoma en minutos',
+    tag:'Use case',
+    blurb:'Risky User Remediation Agent corre el playbook completo: investigar, proponer, ejecutar con approval.',
+    duration:'3 escenas · ~3 min',
+    primaryCat:'protection',
+    nodes: pick(['agent-risky-user','security-copilot','identity-protection','risk-policies','cae','sentinel']),
+    scenes: [
+      {
+        id:1, chip:'Escena 1 · Risk signal',
+        heading:'Identity Protection: leaked credentials + sign-in atípico desde otro continente.',
+        narrative:'<b>Identity Protection</b> detecta credenciales del usuario en un dump conocido (Have I Been Pwned via MS threat intel) + sign-in anómalo. User Risk = High. Sin un agente, esto se queda en una alerta en la queue del SOC hasta que alguien tenga tiempo (MTTR típico: horas).',
+        insight:'El tiempo entre detección y acción es donde el atacante hace daño. Cada minuto cuenta.',
+        introNodes:['identity-protection'],
+        introEdges:[],
+        annotations:[{x:430, y:50, arrow:'down', tone:'default', body:'<b>User risk = High</b>'}]
+      },
+      {
+        id:2, chip:'Escena 2 · El agente actúa',
+        heading:'Risky User Agent investiga, correlaciona, propone playbook.',
+        narrative:'<b>Risky User Remediation Agent</b> (Security Copilot) toma el risk event, enriquece con sign-in logs + device context + threat intel, y arma una propuesta: "Force password reset + revoke todas las sesiones vía CAE + bloquear hasta verification". El agente NO ejecuta solo: pide approval del admin.',
+        insight:'El agente hace el trabajo de un Tier-2 analyst en segundos: investigación + correlation + recomendación lista para aprobar.',
+        introNodes:['security-copilot','agent-risky-user'],
+        introEdges:[
+          {a:'security-copilot', b:'agent-risky-user', t:'data', label:'platform'},
+          {a:'identity-protection', b:'agent-risky-user', t:'signal', label:'risky user feed'}
+        ],
+        annotations:[{x:430, y:120, arrow:'down', tone:'edge-policy', body:'<b>Agent proposes</b>'}]
+      },
+      {
+        id:3, chip:'Escena 3 · Approval + CAE',
+        heading:'Admin aprueba. CAE revoca en minutos. Sentinel cierra el ticket.',
+        narrative:'Admin recibe push notification, abre el agente, revisa el blast radius (qué sesiones, qué apps), aprueba. <b>Risk Policies</b> se dispara: password reset + <b>CAE</b> revoca tokens en &lt;5 min. El user queda bloqueado hasta verification. <b>Sentinel</b> retiene la cadena completa para forensics.',
+        insight:'MTTR: minutos en vez de horas. Trabajo del SOC: aprobar/escalar, no investigar desde cero. Zero Trust en acción.',
+        introNodes:['risk-policies','cae','sentinel'],
+        introEdges:[
+          {a:'agent-risky-user', b:'risk-policies', t:'policy', label:'trigger (approved)'},
+          {a:'risk-policies', b:'cae', t:'signal', label:'force re-eval'},
+          {a:'cae', b:'sentinel', t:'data', label:'revocation events'},
+          {a:'agent-risky-user', b:'sentinel', t:'data', label:'investigation log'}
+        ],
+        annotations:[{x:600, y:200, arrow:'left', tone:'edge-signal', body:'<b>MTTR: minutos</b>'}]
       }
     ]
   }

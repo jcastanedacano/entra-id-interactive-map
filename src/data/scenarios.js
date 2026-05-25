@@ -62,6 +62,24 @@ export const SCENARIO_GROUPS = [
         problem: 'Un empleado accede a M365 + Copilot desde un dispositivo personal no compliant. Riesgo de exfiltración a través del browser.',
         outcome: 'CA exige compliant device o browser via app protection policy. Intune verifica el device. Purview labels + container CA limitan acceso a SharePoint sensible. Internet Access (SWG) aplica filtering.',
         nodes: ['conditional-access','intune','purview','internet-access','global-secure-access']
+      },
+      {
+        id: 'uc-ca-optim', title: 'CA gaps detectados por agente (autonomous)',
+        problem: 'Auditoría revela ~47 apps sin Conditional Access aplicada, usuarios privilegiados fuera de scope CA, policies obsoletas y solapadas. Equipo IAM no tiene capacidad de auditarlo manualmente.',
+        outcome: 'CA Optimization Agent (Security Copilot) analiza Sign-in Logs + CA policies, detecta gaps, overlap y missing Zero Trust controls. Sugiere policies con one-click apply. Admin aprueba en workflow. Evidence en Sign-in Logs + Sentinel.',
+        nodes: ['agent-ca-optim','security-copilot','conditional-access','sign-in-logs','sentinel']
+      },
+      {
+        id: 'uc-agent-risky', title: 'Respuesta autónoma a usuario en riesgo',
+        problem: 'Credenciales del usuario aparecen en un dump conocido + sign-in atípico desde otro continente. SOC saturado, MTTR > 4h.',
+        outcome: 'Risky User Remediation Agent investiga el risk event, propone password reset + token revoke vía CAE + bloqueo temporal. Admin aprueba en 1 click. Tiempo de respuesta < 10 min. Sin SOC en el loop.',
+        nodes: ['agent-risky-user','security-copilot','identity-protection','risk-policies','cae','sentinel']
+      },
+      {
+        id: 'uc-agent-cleanup', title: 'Cleanup masivo de SPs huérfanos + reviewer fatigue',
+        problem: 'Tras 3 años, el tenant tiene 800 service principals (200 sin uso en 90+ días) y los reviewers tardan semanas en cada ciclo de access review por volumen.',
+        outcome: 'App Lifecycle Agent identifica SPs riesgosos/inactivos, dispara recertificaciones; Access Review Agent analiza usage + recomienda approve/remove decisions. Reviewer aprueba en lote. Cleanup en días, no semanas.',
+        nodes: ['agent-app-lifecycle','agent-access-review','security-copilot','service-principals','access-reviews','entitlement-mgmt']
       }
     ]
   },
