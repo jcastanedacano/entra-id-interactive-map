@@ -162,7 +162,6 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
           }
         }}
         onMouseEnter={(e) => { if (!selectedId && item._real) setTooltip({ x: e.clientX, y: e.clientY, component: COMPONENT_MAP[item.id] }) }}
-        onMouseMove={(e) => { if (!selectedId && item._real) setTooltip({ x: e.clientX, y: e.clientY, component: COMPONENT_MAP[item.id] }) }}
         onMouseLeave={() => setTooltip(null)}
       >
         <rect
