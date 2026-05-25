@@ -30,7 +30,8 @@
       "WebFetch(domain:techcommunity.microsoft.com)",
       "WebFetch(domain:www.microsoft.com)",
       "Bash(cp \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\\\\public\\\\icons\\\\security-copilot.svg\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\\\\public\\\\icons\\\\security-copilot.svg\" && \\\\ *)",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add auth-methods + cae icons from Visio Azure_All-Icons_V-3.8 stencil *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add auth-methods + cae icons from Visio Azure_All-Icons_V-3.8 stencil *)",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 3 more icons from Visio: passkeys + b2b + purview *)"
     ]
   }
 }

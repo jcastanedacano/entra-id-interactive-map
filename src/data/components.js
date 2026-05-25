@@ -321,7 +321,10 @@ const ICON_OVERRIDES = {
   'agent-access-review': '/icons/security-copilot.png',
   'agent-app-lifecycle': '/icons/security-copilot.png',
   'auth-methods':        '/icons/auth-methods.png',
-  'cae':                 '/icons/cae.png'
+  'cae':                 '/icons/cae.png',
+  'passkeys':            '/icons/passkeys.png',
+  'b2b':                 '/icons/b2b.png',
+  'purview':             '/icons/purview.png'
 }
 COMPONENTS.forEach(c => { if (ICON_OVERRIDES[c.id]) c.iconSvg = ICON_OVERRIDES[c.id] })
 
