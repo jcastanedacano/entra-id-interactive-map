@@ -18,7 +18,12 @@
       "Bash(git push *)",
       "Bash(gh secret *)",
       "Bash(gh run *)",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add official Microsoft Entra product icons + favicon *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add official Microsoft Entra product icons + favicon *)",
+      "Bash(curl -sI https://icy-grass-040e9080f.7.azurestaticapps.net/favicon.svg)",
+      "Bash(curl -sI https://icy-grass-040e9080f.7.azurestaticapps.net/icons/users.svg)",
+      "Bash(git rm *)",
+      "Bash(git -c user.name=\"jcastanedacano\" -c user.email=\"jorge@itdemos.com\" commit -m \"Untrack ico/ folder \\(icon source ZIPs + extracts kept local\\)\")",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 4 selectable mindmap presets via dropdown *)"
     ]
   }
 }

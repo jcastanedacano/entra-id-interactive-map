@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import * as d3 from 'd3'
 import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
-import { COMPONENT_META, PHASES } from '../data/workloads.js'
+import { MINDMAP_PRESETS, resolveItem } from '../data/mindmaps.js'
 import Tooltip from './Tooltip.jsx'
 
 // Design package palette
@@ -17,7 +17,7 @@ const VH = 1200
 const ROOT = { x: 850, y: VH / 2, w: 200, h: 56 }
 const ECO_HUB = { x: 460, y: VH / 2, w: 156, h: 38 }
 const FAMILY_X = 1180
-const FAMILY_W = 192
+const FAMILY_W = 200
 const FAMILY_H = 48
 const COL_X = [1450, 1700]
 const CARD_W = 224
@@ -26,65 +26,65 @@ const ROW_H = 80
 const FAMILY_GAP = 60
 const ECO_COL_X = 220
 
-// Ordered families on the right, ecosystem on the left
-// Includes the 3 components that were previously missing (barriers,
-// data-security-investigations, data-quality-health) — without them, any
-// relationship overlay touching those nodes had no anchor and drew nothing.
-const FAMILIES_ORDER = [
-  { cat: 'core',       ids: ['users','groups','admin-units','custom-attributes'] },
-  { cat: 'access',     ids: ['conditional-access','mfa','auth-methods','passkeys','auth-strengths','cae','token-protection','named-locations'] },
-  { cat: 'governance', ids: ['pim','entitlement-mgmt','access-reviews','lifecycle-workflows','cross-tenant-sync'] },
-  { cat: 'protection', ids: ['identity-protection','sign-in-logs','risk-policies'] },
-  { cat: 'workload',   ids: ['app-registrations','service-principals','managed-identities','workload-id-premium'] },
-  { cat: 'external',   ids: ['b2b','external-id','verified-id','cross-tenant-access','entra-connect'] },
-  { cat: 'network',    ids: ['global-secure-access','internet-access','private-access'] }
-]
-const ECO_ORDER = ['intune','defender-identity','purview','sentinel']
-
-function buildLayout() {
-  const totalRows = FAMILIES_ORDER.reduce((s, f) => s + Math.ceil(f.ids.length / 2), 0)
-  const totalH = totalRows * ROW_H + (FAMILIES_ORDER.length - 1) * FAMILY_GAP
-  let cursor = (VH - totalH) / 2
-
-  const families = FAMILIES_ORDER.map(f => {
-    const rows = Math.ceil(f.ids.length / 2)
-    const familyH = rows * ROW_H
-    const cards = f.ids.map((id, i) => {
-      const col = i % 2
-      const row = Math.floor(i / 2)
-      return { id, x: COL_X[col], y: cursor + row * ROW_H + ROW_H / 2 }
-    })
-    const familyCenter = { x: FAMILY_X, y: cursor + familyH / 2 }
-    const top = cursor
-    cursor += familyH + FAMILY_GAP
-    return { ...f, cards, familyCenter, top, bottom: top + familyH, rows }
-  })
-
-  const ecoCount = ECO_ORDER.length
-  const ecoStart = ROOT.y - (ecoCount * ROW_H) / 2
-  const ecoCards = ECO_ORDER.map((id, i) => ({
-    id, x: ECO_COL_X, y: ecoStart + i * ROW_H + ROW_H / 2
-  }))
-
-  return { families, ecoCards }
-}
-
 function smoothPath(x1, y1, x2, y2) {
   const dx = Math.abs(x2 - x1)
   const ctrl = Math.max(40, dx * 0.45)
   return `M ${x1} ${y1} C ${x1 + (x2 > x1 ? ctrl : -ctrl)} ${y1}, ${x2 - (x2 > x1 ? ctrl : -ctrl)} ${y2}, ${x2} ${y2}`
 }
 
+function buildLayoutFromPreset(preset) {
+  const families = preset.families.map(f => f.items.map(it => resolveItem(it, COMPONENT_MAP)).filter(Boolean))
+  const familyDefs = preset.families.map((f, i) => ({ ...f, _items: families[i] }))
+
+  const totalRows = familyDefs.reduce((s, f) => s + Math.ceil(f._items.length / 2), 0)
+  const totalH = totalRows * ROW_H + (familyDefs.length - 1) * FAMILY_GAP
+  let cursor = (VH - totalH) / 2
+
+  const out = familyDefs.map(f => {
+    const rows = Math.ceil(f._items.length / 2)
+    const familyH = rows * ROW_H
+    const cards = f._items.map((it, i) => {
+      const col = i % 2
+      const row = Math.floor(i / 2)
+      return { item: it, x: COL_X[col], y: cursor + row * ROW_H + ROW_H / 2 }
+    })
+    const familyCenter = { x: FAMILY_X, y: cursor + familyH / 2 }
+    const top = cursor
+    cursor += familyH + FAMILY_GAP
+    return { cat: f.cat, label: f.label, cards, familyCenter, top, bottom: top + familyH, rows }
+  })
+
+  const ecoResolved = (preset.ecoItems || []).map(it => resolveItem(it, COMPONENT_MAP)).filter(Boolean)
+  const ecoCount = ecoResolved.length
+  const ecoStart = ROOT.y - (ecoCount * ROW_H) / 2
+  const ecoCards = ecoResolved.map((it, i) => ({
+    item: it, x: ECO_COL_X, y: ecoStart + i * ROW_H + ROW_H / 2
+  }))
+
+  return { families: out, ecoCards }
+}
+
 export default function MindmapView({ edgeFilter, categoryFilter, search, setSearch, overlay, selectedComponent, onSelectComponent }) {
-  // Local multi-toggle category filter (Set<string> | null). null = all active.
+  const [presetId, setPresetId] = useState(MINDMAP_PRESETS[0].id)
+  const preset = useMemo(() => MINDMAP_PRESETS.find(p => p.id === presetId) || MINDMAP_PRESETS[0], [presetId])
+
+  // Merge preset-specific categories with the global CATEGORIES for color lookup
+  const CATS = useMemo(() => ({ ...CATEGORIES, ...(preset.presetCategories || {}) }), [preset])
+
   const [activeCats, setActiveCats] = useState(null)
+  // Reset filters when preset changes (different category set)
+  useEffect(() => {
+    setActiveCats(null)
+    onSelectComponent && onSelectComponent(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetId])
+
   const toggleCat = (cat) => {
     setActiveCats(prev => {
-      const all = new Set(Object.keys(CATEGORIES).filter(k => CATEGORIES[k]))
+      const all = new Set(Object.keys(CATS).filter(k => CATS[k]))
       const current = prev || new Set(all)
       const next = new Set(current)
       if (next.has(cat)) next.delete(cat); else next.add(cat)
-      // If set equals all categories OR is empty → reset to null (all on)
       if (next.size === 0 || next.size === all.size) return null
       return next
     })
@@ -92,7 +92,7 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
   const clearFilters = () => { setActiveCats(null); onSelectComponent && onSelectComponent(null) }
   const svgRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
-  const layout = useMemo(buildLayout, [])
+  const layout = useMemo(() => buildLayoutFromPreset(preset), [preset])
   const selectedId = selectedComponent?.id || null
 
   // Pan/zoom
@@ -104,48 +104,47 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
     svg.call(zoom)
   }, [])
 
-  const posById = useMemo(() => {
+  // Position + item lookup by id (covers both real & inline)
+  const itemById = useMemo(() => {
     const map = {}
-    layout.ecoCards.forEach(c => { map[c.id] = { x: c.x, y: c.y } })
-    layout.families.forEach(f => f.cards.forEach(c => { map[c.id] = { x: c.x, y: c.y } }))
+    layout.ecoCards.forEach(c => { map[c.item.id] = { ...c.item, x: c.x, y: c.y } })
+    layout.families.forEach(f => f.cards.forEach(c => { map[c.item.id] = { ...c.item, x: c.x, y: c.y } }))
     return map
   }, [layout])
 
-  // Selected connections (catalog edges)
+  // Selected connections — only for REAL components in the current preset
   const connected = useMemo(() => {
     if (!selectedId) return { set: new Set(), edges: [] }
+    const selNode = itemById[selectedId]
+    if (!selNode || !selNode._real) return { set: new Set(), edges: [] }
     const set = new Set()
     const edges = []
     EDGES.forEach(e => {
-      if (e.source === selectedId && posById[e.target]) { set.add(e.target); edges.push({ ...e, otherId: e.target, dir: 'out' }) }
-      else if (e.target === selectedId && posById[e.source]) { set.add(e.source); edges.push({ ...e, otherId: e.source, dir: 'in' }) }
+      if (e.source === selectedId && itemById[e.target]?._real) { set.add(e.target); edges.push({ ...e, otherId: e.target, dir: 'out' }) }
+      else if (e.target === selectedId && itemById[e.source]?._real) { set.add(e.source); edges.push({ ...e, otherId: e.source, dir: 'in' }) }
     })
     return { set, edges }
-  }, [selectedId, posById])
+  }, [selectedId, itemById])
 
   const lower = (search || '').trim().toLowerCase()
-  const matchesSearch = (id) => {
+  const matchesSearch = (item) => {
     if (!lower) return true
-    const n = COMPONENT_MAP[id]
-    if (!n) return false
-    return n.name.toLowerCase().includes(lower) || (n.sublabel && n.sublabel.toLowerCase().includes(lower))
+    if (!item) return false
+    return item.name.toLowerCase().includes(lower) || (item.sublabel && item.sublabel.toLowerCase().includes(lower))
   }
-  // Multi-toggle: activeCats null = all on; otherwise only members of Set are on.
-  // Also respects global categoryFilter from toolbar as an additional constraint.
   const catActive = (cat) => {
     if (categoryFilter && categoryFilter !== cat) return false
     return !activeCats || activeCats.has(cat)
   }
 
-  function Card({ id, x, y, dashed }) {
-    const n = COMPONENT_MAP[id]
-    if (!n) return null
-    const c = CATEGORIES[n.category]
-    const isSel = selectedId === id
-    const isConn = connected.set.has(id)
+  function Card({ item, x, y, dashed }) {
+    if (!item) return null
+    const c = CATS[item.cat] || { color: MP.ink3, bg: '#F2F4F7' }
+    const isSel = selectedId === item.id
+    const isConn = connected.set.has(item.id)
     const dimSel = selectedId && !isSel && !isConn
-    const dimSearch = !matchesSearch(id)
-    const dimCat = !catActive(n.category)
+    const dimSearch = !matchesSearch(item)
+    const dimCat = !catActive(item.cat)
     const op = dimCat ? 0.18 : (dimSearch ? 0.20 : (dimSel ? 0.30 : 1))
     return (
       <g
@@ -153,11 +152,17 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
         style={{ cursor: 'pointer', opacity: op, transition: 'opacity .25s' }}
         onClick={(e) => {
           e.stopPropagation()
-          setTooltip(null)   // dismiss hover tooltip; the right inspector takes over
-          onSelectComponent && onSelectComponent(isSel ? null : n)
+          setTooltip(null)
+          // Only set selectedComponent for REAL components so the right inspector renders
+          if (item._real) {
+            const fullComp = COMPONENT_MAP[item.id]
+            onSelectComponent && onSelectComponent(isSel ? null : fullComp)
+          } else {
+            onSelectComponent && onSelectComponent(isSel ? null : null)
+          }
         }}
-        onMouseEnter={(e) => { if (!selectedId) setTooltip({ x: e.clientX, y: e.clientY, component: n }) }}
-        onMouseMove={(e) => { if (!selectedId) setTooltip({ x: e.clientX, y: e.clientY, component: n }) }}
+        onMouseEnter={(e) => { if (!selectedId && item._real) setTooltip({ x: e.clientX, y: e.clientY, component: COMPONENT_MAP[item.id] }) }}
+        onMouseMove={(e) => { if (!selectedId && item._real) setTooltip({ x: e.clientX, y: e.clientY, component: COMPONENT_MAP[item.id] }) }}
         onMouseLeave={() => setTooltip(null)}
       >
         <rect
@@ -178,12 +183,12 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
             fontFamily: 'Inter, system-ui, sans-serif',
             pointerEvents: 'none', userSelect: 'none'
           }}>
-            <img src={n.iconSvg} alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
+            {item.iconSvg && <img src={item.iconSvg} alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{
                 fontSize: 12, fontWeight: 600, color: MP.ink, lineHeight: 1.2,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-              }}>{n.name}</div>
+              }}>{item.name}</div>
             </div>
           </div>
         </foreignObject>
@@ -191,31 +196,56 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
     )
   }
 
-  // Counts per category (for filter chips)
+  // Counts per category present in this preset
   const catCounts = useMemo(() => {
     const m = {}
-    COMPONENTS.forEach(c => { m[c.category] = (m[c.category] || 0) + 1 })
+    layout.families.forEach(f => f.cards.forEach(c => { m[c.item.cat] = (m[c.item.cat] || 0) + 1 }))
+    layout.ecoCards.forEach(c => { m[c.item.cat] = (m[c.item.cat] || 0) + 1 })
     return m
-  }, [])
-  // Per design package: stats + filter chips at top
-  const totalNodes = COMPONENTS.length
-  const totalEdges = EDGES.length
+  }, [layout])
+
+  const totalNodes = useMemo(() =>
+    layout.families.reduce((s, f) => s + f.cards.length, 0) + layout.ecoCards.length,
+    [layout]
+  )
+  const totalBranches = layout.families.length
 
   return (
     <div className="relative flex-1 overflow-hidden" style={{ background: '#FAFBFC' }}>
-      {/* Top strip: stats + category filter chips (design package) */}
+      {/* Top strip: preset picker + stats + category filter chips */}
       <div style={{
         position: 'absolute', top: 14, left: 18, right: 18, zIndex: 10,
-        display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
+        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
         fontFamily: 'Inter, system-ui, sans-serif'
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, paddingRight: 18, borderRight: `1px solid ${MP.divider}` }}>
+        {/* Preset picker */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+          background: '#fff', border: `1px solid ${MP.border}`, borderRadius: 8
+        }}>
+          <span style={{ fontSize: 9.5, fontWeight: 700, color: MP.ink3, letterSpacing: '.08em', textTransform: 'uppercase' }}>Mindmap</span>
+          <select
+            value={presetId}
+            onChange={(e) => setPresetId(e.target.value)}
+            style={{
+              border: 'none', outline: 'none', background: 'transparent',
+              fontSize: 12.5, fontWeight: 600, color: MP.ink, cursor: 'pointer',
+              fontFamily: 'inherit', appearance: 'auto', paddingRight: 4
+            }}
+          >
+            {MINDMAP_PRESETS.map(p => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, paddingRight: 14, borderRight: `1px solid ${MP.divider}` }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: MP.ink, letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{totalNodes}</div>
-            <div style={{ fontSize: 9, color: MP.ink3, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 2 }}>componentes</div>
+            <div style={{ fontSize: 9, color: MP.ink3, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 2 }}>nodos</div>
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: MP.ink, letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{Object.keys(catCounts).length}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: MP.ink, letterSpacing: '-0.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{totalBranches}</div>
             <div style={{ fontSize: 9, color: MP.ink3, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 2 }}>ramas</div>
           </div>
         </div>
@@ -232,7 +262,7 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
         <span style={{ fontSize: 9.5, fontWeight: 700, color: MP.ink3, letterSpacing: '.08em', textTransform: 'uppercase' }}>Filtrar</span>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {Object.entries(catCounts).map(([k, ct]) => {
-            const c = CATEGORIES[k]
+            const c = CATS[k]
             if (!c) return null
             const active = catActive(k)
             return (
@@ -253,9 +283,7 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
             )
           })}
         </div>
-        {/* Spacer pushes search to the far right */}
         <div style={{ flex: 1, minWidth: 12 }}></div>
-        {/* Local search input (design package) */}
         <div style={{
           height: 30, display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px',
           background: '#F6F7F9', borderRadius: 7, fontSize: 11, color: MP.ink, minWidth: 220
@@ -264,7 +292,7 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
           <input
             value={search || ''}
             onChange={(e) => setSearch && setSearch(e.target.value)}
-            placeholder="Buscar componente…"
+            placeholder="Buscar nodo…"
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 11, color: MP.ink, fontFamily: 'inherit' }}
           />
           {search && (
@@ -277,32 +305,31 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
         style={{ width: '100%', height: '100%', display: 'block' }}
         onClick={() => onSelectComponent && onSelectComponent(null)}>
         <g className="root">
-          {/* Purview ↔ Ecosystem hub (dashed) */}
+          {/* Root ↔ Eco hub line (dashed) */}
           <path
             d={smoothPath(ROOT.x - ROOT.w/2, ROOT.y, ECO_HUB.x + ECO_HUB.w/2, ECO_HUB.y)}
-            fill="none" stroke={CATEGORIES.shared.color} strokeOpacity={0.45}
+            fill="none" stroke={MP.ink3} strokeOpacity={0.45}
             strokeWidth={1.5} strokeDasharray="6 4"
           />
-          {/* Ecosystem hub → each eco card */}
+          {/* Eco hub → each eco card */}
           {layout.ecoCards.map(card => {
-            const n = COMPONENT_MAP[card.id]
-            const c = n ? CATEGORIES[n.category] : null
+            const c = CATS[card.item.cat] || { color: MP.ink3 }
             return (
-              <path key={'eco-line-'+card.id}
+              <path key={'eco-line-'+card.item.id}
                 d={smoothPath(ECO_HUB.x - ECO_HUB.w/2, ECO_HUB.y, card.x + CARD_W/2, card.y)}
                 fill="none"
-                stroke={c ? c.color : MP.ink3}
-                strokeOpacity={n && !catActive(n.category) ? 0.18 : 0.55}
+                stroke={c.color}
+                strokeOpacity={!catActive(card.item.cat) ? 0.18 : 0.55}
                 strokeWidth={1.5}
                 strokeDasharray="5 3" />
             )
           })}
-          {/* Purview → each family pill */}
+          {/* Root → each family pill */}
           {layout.families.map(f => {
-            const c = CATEGORIES[f.cat]
+            const c = CATS[f.cat] || { color: MP.ink3 }
             const active = catActive(f.cat)
             return (
-              <path key={'fam-line-'+f.cat}
+              <path key={'fam-line-'+f.cat+'-'+f.familyCenter.y}
                 d={smoothPath(ROOT.x + ROOT.w/2, ROOT.y, f.familyCenter.x - FAMILY_W/2, f.familyCenter.y)}
                 fill="none" stroke={c.color}
                 strokeOpacity={active ? 0.6 : 0.18}
@@ -311,9 +338,9 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
           })}
           {/* Family pill → each card */}
           {layout.families.map(f => {
-            const c = CATEGORIES[f.cat]
+            const c = CATS[f.cat] || { color: MP.ink3 }
             return f.cards.map(card => (
-              <path key={'card-line-'+card.id}
+              <path key={'card-line-'+card.item.id}
                 d={smoothPath(f.familyCenter.x + FAMILY_W/2, f.familyCenter.y, card.x - CARD_W/2, card.y)}
                 fill="none" stroke={c.color}
                 strokeOpacity={!catActive(f.cat) ? 0.15 : 0.5}
@@ -323,19 +350,20 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
 
           {/* Family pills */}
           {layout.families.map(f => {
-            const c = CATEGORIES[f.cat]
+            const c = CATS[f.cat] || { color: MP.ink3, bg: '#F2F4F7', label: f.cat }
             const dim = !catActive(f.cat)
+            const label = f.label || c.label || f.cat
             return (
-              <g key={'fam-'+f.cat}
+              <g key={'fam-'+f.cat+'-'+f.familyCenter.y}
                 transform={`translate(${f.familyCenter.x - FAMILY_W/2},${f.familyCenter.y - FAMILY_H/2})`}
                 style={{ opacity: dim ? 0.3 : 1, transition: 'opacity .25s' }}>
                 <rect x={0} y={0} width={FAMILY_W} height={FAMILY_H} rx={FAMILY_H/2}
                   fill={c.bg} stroke={c.color} strokeWidth={1.5} />
                 <text x={FAMILY_W/2} y={FAMILY_H/2 + 4}
-                  textAnchor="middle" fontSize="11" fontWeight="700"
-                  fill={c.color} letterSpacing="0.10em"
+                  textAnchor="middle" fontSize="10.5" fontWeight="700"
+                  fill={c.color} letterSpacing="0.08em"
                   style={{ fontFamily: 'Inter, system-ui, sans-serif', textTransform: 'uppercase' }}>
-                  {c.label}
+                  {label}
                 </text>
               </g>
             )
@@ -344,16 +372,16 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
           {/* Ecosystem hub */}
           <g transform={`translate(${ECO_HUB.x - ECO_HUB.w/2},${ECO_HUB.y - ECO_HUB.h/2})`}>
             <rect x={0} y={0} width={ECO_HUB.w} height={ECO_HUB.h} rx={ECO_HUB.h/2}
-              fill="#fff" stroke={CATEGORIES.shared.color} strokeWidth={1.3} strokeDasharray="5 3" />
+              fill="#fff" stroke={MP.ink3} strokeWidth={1.3} strokeDasharray="5 3" />
             <text x={ECO_HUB.w/2} y={ECO_HUB.h/2 + 3.5}
               textAnchor="middle" fontSize="10" fontWeight="700"
-              fill={CATEGORIES.shared.color} letterSpacing="0.14em"
+              fill={MP.ink2} letterSpacing="0.12em"
               style={{ fontFamily: 'Inter, system-ui, sans-serif', textTransform: 'uppercase' }}>
-              ECOSISTEMA
+              {preset.ecoHubLabel || 'ECOSYSTEM'}
             </text>
           </g>
 
-          {/* Root pill: Microsoft Purview */}
+          {/* Root pill */}
           <g transform={`translate(${ROOT.x - ROOT.w/2},${ROOT.y - ROOT.h/2})`}>
             <rect x={0} y={0} width={ROOT.w} height={ROOT.h} rx={10}
               fill="#fff" stroke={MP.selection} strokeWidth={1.5}
@@ -362,38 +390,38 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
               textAnchor="middle" fontSize="9" fontWeight="600"
               fill={MP.ink3} letterSpacing="0.14em"
               style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', textTransform: 'uppercase' }}>
-              MICROSOFT
+              {preset.root.top}
             </text>
             <text x={ROOT.w/2} y={ROOT.h/2 + 14}
               textAnchor="middle" fontSize="18" fontWeight="700"
               fill={MP.ink} letterSpacing="-0.01em"
               style={{ fontFamily: 'Inter, sans-serif' }}>
-              Entra ID
+              {preset.root.main}
             </text>
           </g>
 
           {/* Cards */}
           {layout.ecoCards.map(card => (
-            <Card key={'eco-'+card.id} id={card.id} x={card.x} y={card.y} dashed />
+            <Card key={'eco-'+card.item.id} item={card.item} x={card.x} y={card.y} dashed />
           ))}
           {layout.families.map(f => f.cards.map(card => (
-            <Card key={'card-'+card.id} id={card.id} x={card.x} y={card.y} />
+            <Card key={'card-'+card.item.id} item={card.item} x={card.x} y={card.y} />
           )))}
 
-          {/* Relationship overlay when a node is selected — drawn on top of cards.
-              Hidden when the edge type is toggled off OR when either endpoint's
-              category is filtered out via the FILTRAR chips.
-              Label positions are anti-collision resolved along the edge normal. */}
+          {/* Relationship overlay — only for real components when selected */}
           {(() => {
-            if (!selectedId || !posById[selectedId]) return null
-            // 1. Build visible edge list with geometry
+            const selNode = selectedId ? itemById[selectedId] : null
+            if (!selNode || !selNode._real) return null
+            const posById = {}
+            Object.values(itemById).forEach(it => { posById[it.id] = { x: it.x, y: it.y } })
+
             const visibleEdges = []
             connected.edges.forEach((e, i) => {
               if (!edgeFilter[e.type]) return
-              const selectedComp = COMPONENT_MAP[selectedId]
-              const otherComp = COMPONENT_MAP[e.otherId]
+              const selectedComp = itemById[selectedId]
+              const otherComp = itemById[e.otherId]
               if (!otherComp || !selectedComp) return
-              if (!catActive(selectedComp.category) || !catActive(otherComp.category)) return
+              if (!catActive(selectedComp.cat) || !catActive(otherComp.cat)) return
               const a = posById[selectedId]
               const b = posById[e.otherId]
               if (!b) return
@@ -407,7 +435,7 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
                 nx: -dy/len, ny: dx/len,
                 labelW: (e.label?.length || 0) * 6.5 + 18 })
             })
-            // 2. Anti-collision: resolve label positions
+
             const LABEL_H = 18, PAD = 2
             const placed = []
             const nodeBoxes = Object.values(posById).map(p => ({
@@ -436,7 +464,6 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
               placed.push({ x: mx - labelW/2 - PAD, y: my - LABEL_H/2 - PAD, w: labelW + PAD*2, h: LABEL_H + PAD*2 })
               return { x: mx, y: my }
             })
-            // 3. Render — two passes: all lines first, then all labels on top
             const lines = visibleEdges.map(({ e, i, ax, bx, ay, by }) => {
               const et = EDGE_TYPES[e.type] || EDGE_TYPES.Data
               return (
@@ -458,7 +485,6 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
               const lp = labelPos[vi]
               return (
                 <g key={'lbl-'+i} transform={`translate(${lp.x},${lp.y})`} style={{ pointerEvents: 'none' }}>
-                  {/* solid white shadow to fully cover lines underneath */}
                   <rect x={-labelW/2 - 2} y={-10} width={labelW + 4} height={20} rx={10} fill="#fff" />
                   <rect x={-labelW/2} y={-9} width={labelW} height={18} rx={9}
                     fill="#fff" stroke={et.color} strokeOpacity={0.7} strokeWidth={1.2} />
