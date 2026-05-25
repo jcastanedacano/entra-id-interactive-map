@@ -312,6 +312,17 @@ COMPONENTS.forEach(c => {
   c.iconSvg = `/icons/${c.id}.svg`
 })
 
+// Per-component icon overrides (when extension differs from .svg, or when
+// multiple components share an icon).
+const ICON_OVERRIDES = {
+  'security-copilot':    '/icons/security-copilot.png',
+  'agent-ca-optim':      '/icons/security-copilot.png',
+  'agent-risky-user':    '/icons/security-copilot.png',
+  'agent-access-review': '/icons/security-copilot.png',
+  'agent-app-lifecycle': '/icons/security-copilot.png'
+}
+COMPONENTS.forEach(c => { if (ICON_OVERRIDES[c.id]) c.iconSvg = ICON_OVERRIDES[c.id] })
+
 const _byId = Object.fromEntries(COMPONENTS.map(c => [c.id, c]))
 export const COMPONENT_MAP = new Proxy(_byId, {
   get(target, prop) {
