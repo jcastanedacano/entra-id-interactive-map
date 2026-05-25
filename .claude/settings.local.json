@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\" 2>&1 | head -100)",
+      "mcp__Lokka-Microsoft__get-auth-status",
+      "Bash(gh auth *)",
+      "Bash(npm --version)",
+      "mcp__Lokka-Microsoft__Lokka-Microsoft",
+      "Bash(robocopy \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\" /E /XD node_modules dist .git iconos /XF package-lock.json /NFL /NDL /NJH /NJS /NP)",
+      "Bash(echo \"ROBOCOPY_EXIT=$?\")",
+      "PowerShell(robocopy \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\" /E /XD node_modules dist .git iconos /XF package-lock.json /NFL /NDL /NJH /NJS /NP; \"EXIT=$LASTEXITCODE\")",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git -c user.name=\"jcastanedacano\" -c user.email=\"jorge@itdemos.com\" commit -m \"Initial commit · Entra ID Interactive Map \\(fork of purview-interactive-map architecture\\)\")"
+    ]
+  }
+}
