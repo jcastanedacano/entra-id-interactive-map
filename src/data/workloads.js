@@ -72,7 +72,14 @@ const _COMPONENT_META = {
   'intune':             { workloads: { m365:2, azure:1, saas:1, onprem:0, devices:2, workloadid:0, external:1 } },
   'defender-identity':  { workloads: { m365:1, azure:1, saas:0, onprem:2, devices:1, workloadid:0, external:0 } },
   'purview':            { workloads: { m365:2, azure:1, saas:1, onprem:0, devices:1, workloadid:0, external:0 } },
-  'sentinel':           { workloads: { m365:2, azure:2, saas:2, onprem:1, devices:1, workloadid:1, external:1 } }
+  'sentinel':           { workloads: { m365:2, azure:2, saas:2, onprem:1, devices:1, workloadid:1, external:1 } },
+
+  // Security Copilot platform + 4 Entra agents
+  'security-copilot':     { workloads: { m365:1, azure:1, saas:1, onprem:0, devices:0, workloadid:1, external:0 } },
+  'agent-ca-optim':       { workloads: { m365:2, azure:2, saas:2, onprem:0, devices:1, workloadid:1, external:1 } },
+  'agent-risky-user':     { workloads: { m365:2, azure:1, saas:1, onprem:0, devices:0, workloadid:0, external:1 } },
+  'agent-access-review':  { workloads: { m365:2, azure:1, saas:1, onprem:0, devices:0, workloadid:1, external:1 } },
+  'agent-app-lifecycle':  { workloads: { m365:1, azure:1, saas:1, onprem:0, devices:0, workloadid:2, external:0 } }
 }
 
 import { COMPONENTS, computePhase, resolveId } from './components.js'

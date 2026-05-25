@@ -23,7 +23,13 @@
       "Bash(curl -sI https://icy-grass-040e9080f.7.azurestaticapps.net/icons/users.svg)",
       "Bash(git rm *)",
       "Bash(git -c user.name=\"jcastanedacano\" -c user.email=\"jorge@itdemos.com\" commit -m \"Untrack ico/ folder \\(icon source ZIPs + extracts kept local\\)\")",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 4 selectable mindmap presets via dropdown *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 4 selectable mindmap presets via dropdown *)",
+      "Bash(for dir in \"Purview\" \"Defender\" \"Azure Security\"; do *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 6 reused icons from sibling projects *)",
+      "WebFetch(domain:techcommunity.microsoft.com)",
+      "WebFetch(domain:www.microsoft.com)",
+      "Bash(cp \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\\\\public\\\\icons\\\\security-copilot.svg\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\\\\public\\\\icons\\\\security-copilot.svg\" && \\\\ *)"
     ]
   }
 }

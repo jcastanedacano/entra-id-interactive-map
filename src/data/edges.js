@@ -99,7 +99,32 @@ const _EDGES_RAW = [
   // ── Audit cross-cutting
   { from:'pim', to:'sign-in-logs',           flow:'data',       label:'Activation events' },
   { from:'conditional-access', to:'sign-in-logs', flow:'data',  label:'Policy decisions' },
-  { from:'service-principals', to:'sign-in-logs', flow:'data',  label:'Workload sign-ins' }
+  { from:'service-principals', to:'sign-in-logs', flow:'data',  label:'Workload sign-ins' },
+
+  // ── Security Copilot platform + 4 Entra agents
+  { from:'security-copilot', to:'sign-in-logs',        flow:'signal', label:'Telemetry context' },
+  { from:'security-copilot', to:'identity-protection', flow:'signal', label:'Risk context' },
+  { from:'security-copilot', to:'pim',                 flow:'signal', label:'Privilege context' },
+  { from:'security-copilot', to:'agent-ca-optim',       flow:'data',   label:'Platform' },
+  { from:'security-copilot', to:'agent-risky-user',     flow:'data',   label:'Platform' },
+  { from:'security-copilot', to:'agent-access-review',  flow:'data',   label:'Platform' },
+  { from:'security-copilot', to:'agent-app-lifecycle',  flow:'data',   label:'Platform' },
+  // CA Optimization Agent
+  { from:'conditional-access', to:'agent-ca-optim',     flow:'data',   label:'Policies analyzed' },
+  { from:'sign-in-logs',       to:'agent-ca-optim',     flow:'data',   label:'Telemetry baseline' },
+  { from:'agent-ca-optim',     to:'conditional-access', flow:'policy', label:'Apply recommendations' },
+  // Risky User Remediation Agent
+  { from:'identity-protection', to:'agent-risky-user',  flow:'signal', label:'Risky users feed' },
+  { from:'agent-risky-user',    to:'risk-policies',     flow:'policy', label:'Trigger remediation' },
+  { from:'agent-risky-user',    to:'users',             flow:'policy', label:'Auto-remediate' },
+  // Access Review Agent
+  { from:'access-reviews',      to:'agent-access-review', flow:'data',   label:'Review queue' },
+  { from:'agent-access-review', to:'access-reviews',    flow:'policy', label:'Recommend approve/remove' },
+  // App Lifecycle Agent
+  { from:'service-principals',  to:'agent-app-lifecycle', flow:'data',   label:'SP inventory' },
+  { from:'app-registrations',   to:'agent-app-lifecycle', flow:'data',   label:'App inventory' },
+  { from:'agent-app-lifecycle', to:'service-principals', flow:'policy', label:'Cleanup / recertify' },
+  { from:'agent-app-lifecycle', to:'access-reviews',    flow:'policy', label:'Trigger reviews' }
 ]
 
 export const EDGES = _EDGES_RAW.map(e => ({

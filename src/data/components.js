@@ -219,7 +219,29 @@ export const COMPONENTS = [
   { id: 'sentinel', name: 'Microsoft Sentinel', category: 'ecosystem', icon: 'Eye',
     sublabel: 'SIEM · KQL · Data Lake · UEBA',
     prereqs: [],
-    description: 'Cloud-native SIEM that ingests sign-in, audit and risk telemetry from Entra. KQL hunting, UEBA, SOAR playbooks, and the data lake tier provides 12-year retention for identity forensics.' }
+    description: 'Cloud-native SIEM that ingests sign-in, audit and risk telemetry from Entra. KQL hunting, UEBA, SOAR playbooks, and the data lake tier provides 12-year retention for identity forensics.' },
+
+  // Security Copilot + Entra-specific agents (validated Nov 2025 Microsoft blog)
+  { id: 'security-copilot', name: 'Microsoft Security Copilot', category: 'ecosystem', icon: 'Sparkles',
+    sublabel: 'AI assistant · KQL drafting · Incident summarization',
+    prereqs: [],
+    description: 'Generative AI assistant that reads from Entra, Defender, Sentinel, Purview and Intune. Drafts KQL, summarizes incidents, generates reports, recommends actions. Foundation for all Security Copilot agents.' },
+  { id: 'agent-ca-optim', name: 'CA Optimization Agent', category: 'governance', icon: 'Bot',
+    sublabel: 'Autonomous · Detects gaps + overlap · Suggests CA',
+    prereqs: ['security-copilot','conditional-access'],
+    description: 'Security Copilot agent for Microsoft Entra (Preview, GA 2025). Continuously analyzes Conditional Access policies, detects gaps (users/apps not covered), overlap, outdated assignments and missing Zero Trust controls. Recommends one-click remediations.' },
+  { id: 'agent-risky-user', name: 'Risky User Remediation Agent', category: 'protection', icon: 'Bot',
+    sublabel: 'Autonomous · Proactive remediation',
+    prereqs: ['security-copilot','identity-protection'],
+    description: 'Security Copilot agent for Entra (Preview). Proactively investigates and remediates risky users surfaced by Identity Protection — closes risk events, forces password reset, blocks where needed, all with approval workflows.' },
+  { id: 'agent-access-review', name: 'Access Review Agent', category: 'governance', icon: 'Bot',
+    sublabel: 'Autonomous · Streamlines AR decisions',
+    prereqs: ['security-copilot','access-reviews'],
+    description: 'Security Copilot agent for Entra (Preview). Streamlines access reviews by analyzing usage signals, identifying stale access and recommending approve/remove decisions to reviewers — reducing review fatigue.' },
+  { id: 'agent-app-lifecycle', name: 'App Lifecycle Agent', category: 'governance', icon: 'Bot',
+    sublabel: 'Autonomous · Reduce app sprawl',
+    prereqs: ['security-copilot','service-principals'],
+    description: 'Security Copilot agent for Entra (Preview). Manages application lifecycles to reduce risk — identifies unused or risky app registrations, recommends owner reviews, triggers cleanup workflows and recertifications.' }
 ]
 
 // No legacy IDs in this fresh project — kept for shape parity.
@@ -267,7 +289,12 @@ const LEARN_URLS = {
   'intune':                 'https://learn.microsoft.com/en-us/mem/intune/fundamentals/what-is-intune',
   'defender-identity':      'https://learn.microsoft.com/en-us/defender-for-identity/what-is',
   'purview':                'https://learn.microsoft.com/en-us/purview/purview',
-  'sentinel':               'https://learn.microsoft.com/en-us/azure/sentinel/overview'
+  'sentinel':               'https://learn.microsoft.com/en-us/azure/sentinel/overview',
+  'security-copilot':       'https://learn.microsoft.com/en-us/security-copilot/microsoft-security-copilot',
+  'agent-ca-optim':         'https://learn.microsoft.com/en-us/entra/identity/conditional-access/agentic-iam-conditional-access-optimization-agent',
+  'agent-risky-user':       'https://learn.microsoft.com/en-us/security-copilot/agentic-iam-risky-user-remediation-agent',
+  'agent-access-review':    'https://learn.microsoft.com/en-us/security-copilot/agentic-iam-access-review-agent',
+  'agent-app-lifecycle':    'https://learn.microsoft.com/en-us/security-copilot/agentic-iam-app-lifecycle-agent'
 }
 COMPONENTS.forEach(c => { c.learnUrl = LEARN_URLS[c.id] })
 

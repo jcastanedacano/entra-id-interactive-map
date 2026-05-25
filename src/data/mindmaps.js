@@ -8,6 +8,8 @@
 // Inspired by https://entra.news/p/entra-mind-maps reference set.
 
 export const MINDMAP_PRESETS = [
+  // ── 5) Security Copilot Agents · cross-product (Microsoft Nov 2025 blog) ───
+  // (declared first so it shows in dropdown but ordered later — see export order)
   // ── 1) Entra Suite (current default — uses real components) ────────────────
   {
     id: 'entra-suite',
@@ -18,13 +20,13 @@ export const MINDMAP_PRESETS = [
     families: [
       { cat: 'core',       items: ['users','groups','admin-units','custom-attributes'] },
       { cat: 'access',     items: ['conditional-access','mfa','auth-methods','passkeys','auth-strengths','cae','token-protection','named-locations'] },
-      { cat: 'governance', items: ['pim','entitlement-mgmt','access-reviews','lifecycle-workflows','cross-tenant-sync'] },
-      { cat: 'protection', items: ['identity-protection','sign-in-logs','risk-policies'] },
+      { cat: 'governance', items: ['pim','entitlement-mgmt','access-reviews','lifecycle-workflows','cross-tenant-sync','agent-ca-optim','agent-access-review','agent-app-lifecycle'] },
+      { cat: 'protection', items: ['identity-protection','sign-in-logs','risk-policies','agent-risky-user'] },
       { cat: 'workload',   items: ['app-registrations','service-principals','managed-identities','workload-id-premium'] },
       { cat: 'external',   items: ['b2b','external-id','verified-id','cross-tenant-access','entra-connect'] },
       { cat: 'network',    items: ['global-secure-access','internet-access','private-access'] }
     ],
-    ecoItems: ['intune','defender-identity','purview','sentinel']
+    ecoItems: ['intune','defender-identity','purview','sentinel','security-copilot']
   },
 
   // ── 2) Entra ID — Deep dive (admin portal nav structure) ───────────────────
@@ -302,6 +304,61 @@ export const MINDMAP_PRESETS = [
 ]
 
 // Lookup helpers
+// ── 5) Security Copilot Agents · cross-product taxonomy ──────────────────────
+MINDMAP_PRESETS.push({
+  id: 'copilot-agents',
+  label: 'Security Copilot Agents · cross-product',
+  description: 'Los 12 agentes oficiales de Microsoft (Nov 2025) agrupados por producto.',
+  root: { top: 'MICROSOFT', main: 'Security Copilot' },
+  ecoHubLabel: 'PARTNER',
+  presetCategories: {
+    'sc-defender': { color: '#3B5DD9', bg: '#E6EAFB', label: 'Defender' },
+    'sc-entra':    { color: '#C5377A', bg: '#FBE6EF', label: 'Entra' },
+    'sc-purview':  { color: '#0F9D6A', bg: '#E6F6EE', label: 'Purview' },
+    'sc-intune':   { color: '#C97A14', bg: '#FBF1DE', label: 'Intune' },
+    'sc-platform': { color: '#8541C5', bg: '#F0E7FA', label: 'Platform' },
+    'sc-partner':  { color: '#6D9224', bg: '#F0F5DC', label: 'Partner-built' }
+  },
+  families: [
+    { cat: 'sc-defender', label: 'DEFENDER', items: [
+      { id:'sc-d-phish', name:'Phishing Triage Agent · GA', cat:'sc-defender', sublabel:'Email + collab alert triage' },
+      { id:'sc-d-alert', name:'Alert Triage Agent · Preview', cat:'sc-defender', sublabel:'Identity + cloud alerts (containers preview)' },
+      { id:'sc-d-hunt',  name:'Threat Hunting Agent · Preview', cat:'sc-defender', sublabel:'Natural-language KQL hunting' }
+    ]},
+    { cat: 'sc-entra', label: 'ENTRA', items: [
+      { id:'sc-e-ca',     name:'CA Optimization Agent · Preview', cat:'sc-entra', sublabel:'Detects gaps, overlap, missing ZT policies' },
+      { id:'sc-e-risky',  name:'Risky User Remediation Agent · Preview', cat:'sc-entra', sublabel:'Proactive remediation of risky users' },
+      { id:'sc-e-review', name:'Access Review Agent · Preview', cat:'sc-entra', sublabel:'Recommends approve/remove decisions' },
+      { id:'sc-e-app',    name:'App Lifecycle Agent · Preview', cat:'sc-entra', sublabel:'Reduces app sprawl + risk' }
+    ]},
+    { cat: 'sc-purview', label: 'PURVIEW', items: [
+      { id:'sc-p-disco', name:'Data Discovery Agent · Preview', cat:'sc-purview', sublabel:'Discovers + analyzes sensitive data' },
+      { id:'sc-p-remed', name:'Data Remediation Agent · Preview', cat:'sc-purview', sublabel:'Remediates sensitive data risks' }
+    ]},
+    { cat: 'sc-intune', label: 'INTUNE', items: [
+      { id:'sc-i-policy',  name:'Policy Creation Agent · Preview', cat:'sc-intune', sublabel:'Requirements → device policies' },
+      { id:'sc-i-change',  name:'Change Assessment Agent · Preview', cat:'sc-intune', sublabel:'Assess policy changes before deploy' },
+      { id:'sc-i-removal', name:'Device Removal Agent · Preview', cat:'sc-intune', sublabel:'Identifies devices to remove' }
+    ]},
+    { cat: 'sc-platform', label: 'PLATFORM CAPABILITIES', items: [
+      { id:'sc-pl-prompt',     name:'Standalone prompts (Copilot.microsoft.com)', cat:'sc-platform' },
+      { id:'sc-pl-embedded',   name:'Embedded in Defender / Entra / Purview / Intune', cat:'sc-platform' },
+      { id:'sc-pl-promptbook', name:'Promptbooks (saved workflows)', cat:'sc-platform' },
+      { id:'sc-pl-plugins',    name:'Plugins (MS + custom + partner)', cat:'sc-platform' },
+      { id:'sc-pl-kql',        name:'KQL drafting + explanation', cat:'sc-platform' },
+      { id:'sc-pl-summary',    name:'Incident + script summarization', cat:'sc-platform' }
+    ]}
+  ],
+  ecoItems: [
+    { id:'sc-prt-store',  name:'Security Store (30+ partner agents)', cat:'sc-partner' },
+    { id:'sc-prt-tanium', name:'Tanium · Asset triage', cat:'sc-partner' },
+    { id:'sc-prt-1pwd',   name:'1Password · Privileged session review', cat:'sc-partner' },
+    { id:'sc-prt-darkt',  name:'Darktrace · ANTIGENA response', cat:'sc-partner' },
+    { id:'sc-prt-jamf',   name:'Jamf · macOS hardening', cat:'sc-partner' },
+    { id:'sc-prt-others', name:'25+ more partner agents', cat:'sc-partner' }
+  ]
+})
+
 export function getPreset(id) {
   return MINDMAP_PRESETS.find(p => p.id === id) || MINDMAP_PRESETS[0]
 }
