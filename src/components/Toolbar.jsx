@@ -30,7 +30,7 @@ export default function Toolbar(props) {
       {/* Row 1 — brand + tabs + spacer + search + reset + ? (minimalist per design package) */}
       <div className="flex items-center gap-3" style={{ padding: '0 22px', minHeight: 54 }}>
         <div className="flex items-center gap-2 shrink-0">
-          <div style={{ width: 30, height: 30, background: '#C5377A', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700 }}>E</div>
+          <img src="/entra-logo.svg" alt="Entra ID" style={{ width: 30, height: 30, flexShrink: 0 }} />
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: SV_INK }}>Entra ID Map</div>
         </div>
 
