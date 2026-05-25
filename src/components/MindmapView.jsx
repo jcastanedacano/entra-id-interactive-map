@@ -26,6 +26,33 @@ const ROW_H = 80
 const FAMILY_GAP = 60
 const ECO_COL_X = 220
 
+// Memoized cards subtree — only re-renders when its visual deps change,
+// NOT on tooltip state changes. Prevents subpixel text jitter inside foreignObject.
+const CardsLayer = React.memo(function CardsLayer({ layout, Card }) {
+  return (
+    <>
+      {layout.ecoCards.map(card => (
+        <Card key={'eco-'+card.item.id} item={card.item} x={card.x} y={card.y} dashed />
+      ))}
+      {layout.families.map(f => f.cards.map(card => (
+        <Card key={'card-'+card.item.id} item={card.item} x={card.x} y={card.y} />
+      )))}
+    </>
+  )
+}, (prev, next) => {
+  // Skip render only if visual state hasn't changed. We deliberately ignore the
+  // `Card` function identity (it changes every parent render) — Card reads
+  // selectedId/activeCats/connected from closure, so those changes still propagate
+  // by re-mounting Card via the visual-deps below.
+  return prev.layout === next.layout
+    && prev.selectedId === next.selectedId
+    && prev.connectedSetSize === next.connectedSetSize
+    && prev.activeCats === next.activeCats
+    && prev.categoryFilter === next.categoryFilter
+    && prev.search === next.search
+    && prev.presetId === next.presetId
+})
+
 function smoothPath(x1, y1, x2, y2) {
   const dx = Math.abs(x2 - x1)
   const ctrl = Math.max(40, dx * 0.45)
@@ -399,13 +426,8 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
             </text>
           </g>
 
-          {/* Cards */}
-          {layout.ecoCards.map(card => (
-            <Card key={'eco-'+card.item.id} item={card.item} x={card.x} y={card.y} dashed />
-          ))}
-          {layout.families.map(f => f.cards.map(card => (
-            <Card key={'card-'+card.item.id} item={card.item} x={card.x} y={card.y} />
-          )))}
+          {/* Cards — memoized so tooltip state changes don't re-reconcile foreignObject text (anti-jitter) */}
+          <CardsLayer layout={layout} Card={Card} selectedId={selectedId} connectedSetSize={connected.set.size} activeCats={activeCats} categoryFilter={categoryFilter} search={search} presetId={presetId} />
 
           {/* Relationship overlay — only for real components when selected */}
           {(() => {
