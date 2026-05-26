@@ -319,12 +319,9 @@ const ICON_OVERRIDES = {
   'agent-ca-optim':      '/icons/security-copilot.png',
   'agent-risky-user':    '/icons/security-copilot.png',
   'agent-access-review': '/icons/security-copilot.png',
-  'agent-app-lifecycle': '/icons/security-copilot.png',
-  'auth-methods':        '/icons/auth-methods.png',
-  'cae':                 '/icons/cae.png',
-  'passkeys':            '/icons/passkeys.png',
-  'b2b':                 '/icons/b2b.png',
-  'purview':             '/icons/purview.png'
+  'agent-app-lifecycle': '/icons/security-copilot.png'
+  // auth-methods, cae, passkeys, b2b, purview now resolved via default
+  // /icons/{id}.svg path (no longer PNG — replaced 32x32 ICOs with vector SVGs)
 }
 COMPONENTS.forEach(c => { if (ICON_OVERRIDES[c.id]) c.iconSvg = ICON_OVERRIDES[c.id] })
 

@@ -44,7 +44,8 @@
       "WebFetch(domain:az-icons.com)",
       "WebFetch(domain:fluent2.microsoft.design)",
       "Bash(grep -E '^\\(auth-strengths|named-locations|access-reviews|lifecycle-workflows|cross-tenant-sync|cross-tenant-access\\)\\\\.svg$')",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 6 Fluent UI System Icons \\(MIT\\) — 100% icon coverage for Entra ID *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 6 Fluent UI System Icons \\(MIT\\) — 100% icon coverage for Entra ID *)",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Upgrade 5 low-res 32x32 PNGs to vector SVGs *)"
     ]
   }
 }
