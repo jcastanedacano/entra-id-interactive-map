@@ -31,7 +31,20 @@
       "WebFetch(domain:www.microsoft.com)",
       "Bash(cp \"C:\\\\Aplicaciones\\\\Map Interactive - Purview\\\\public\\\\icons\\\\security-copilot.svg\" \"C:\\\\Aplicaciones\\\\Map Interactive - Entra ID\\\\public\\\\icons\\\\security-copilot.svg\" && \\\\ *)",
       "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add auth-methods + cae icons from Visio Azure_All-Icons_V-3.8 stencil *)",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 3 more icons from Visio: passkeys + b2b + purview *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 3 more icons from Visio: passkeys + b2b + purview *)",
+      "mcp__d203d7b1-3c89-4b2d-9468-5338e8604c0d__microsoft_docs_search",
+      "Bash(ls -la 'C:/Aplicaciones/Map Interactive - Entra ID/ico/learn-icons')",
+      "Bash(curl -sIL \"https://learn.microsoft.com/entra/media/common/icons/entra-id-purple.png\")",
+      "Bash(curl -sIL \"https://learn.microsoft.com/en-us/entra/media/common/icons/entra-id-purple.png\")",
+      "Bash(curl -sL \"https://learn.microsoft.com/en-us/entra/media/common/icons/entra-id-purple.png\")",
+      "Bash(xxd)",
+      "Bash(gh api *)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(i['type'][0], i['name']\\) for i in d]\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(' ', i['type'][0], i['name']\\) for i in d]\")",
+      "WebFetch(domain:az-icons.com)",
+      "WebFetch(domain:fluent2.microsoft.design)",
+      "Bash(grep -E '^\\(auth-strengths|named-locations|access-reviews|lifecycle-workflows|cross-tenant-sync|cross-tenant-access\\)\\\\.svg$')",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add 6 Fluent UI System Icons \\(MIT\\) — 100% icon coverage for Entra ID *)"
     ]
   }
 }
