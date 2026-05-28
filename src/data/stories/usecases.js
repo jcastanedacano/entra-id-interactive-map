@@ -1,7 +1,7 @@
 // Story View · 3 historias · Use cases (ataques y defensas)
 import { pickNodes as pick } from "../storyData.js"
 
-export const STORY_ORDER = ['uc-aitm','uc-pwd-spray','uc-workload-leak','agent-ca-optim','agent-risky-response']
+export const STORY_ORDER = ['uc-aitm','uc-pwd-spray','uc-workload-leak','multitenant-secret','agent-ca-optim','agent-risky-response']
 
 export const STORIES = {
 
@@ -235,6 +235,58 @@ export const STORIES = {
           {a:'agent-risky-user', b:'sentinel', t:'data', label:'investigation log'}
         ],
         annotations:[{x:600, y:200, arrow:'left', tone:'edge-signal', body:'<b>MTTR: minutos</b>'}]
+      }
+    ]
+  },
+
+  'multitenant-secret': {
+    id:'multitenant-secret',
+    title:'Multi-tenant app secret · ataque silencioso cross-tenant',
+    tag:'Use case',
+    blurb:'El client_secret de una App Registration multi-tenant se filtra. El attacker NO ataca al owner: ataca los SPs en los tenants que consintieron la app.',
+    duration:'3 escenas · ~4 min',
+    primaryCat:'workload',
+    nodes: pick(['app-registrations','service-principals','cross-tenant-access','workload-id-premium','named-locations','identity-protection','risk-policies','cae','sign-in-logs','sentinel']),
+    scenes: [
+      {
+        id:1, chip:'Escena 1 · El leak + la topología real',
+        heading:'App Registration multi-tenant. Service Principals en cada cliente. Un único secret que sirve para todos.',
+        narrative:'<b>App Registration ABC</b> (tenant Owner, signInAudience: <code>AzureADMultipleOrgs</code>) tiene client_secret XYZ. Tenants Cliente A y B consintieron la app → <b>Enterprise Application / Service Principal</b> creado en cada uno con permisos delegados (Mail.Read, Files.Read.All). Developer commitea XYZ en repo público. El secret <i>no</i> abre el App Registration: abre cualquier Service Principal en cualquier tenant cliente que ya haya consentido la app.',
+        insight:'El blast radius no son los datos del tenant Owner. Son los datos de TODOS los clientes que consintieron la app. Una app SaaS con 200 clientes corporativos = 200 tenants explotables con el mismo secret.',
+        introNodes:['app-registrations','service-principals'],
+        introEdges:[{a:'app-registrations', b:'service-principals', t:'data', label:'instantiation per consenting tenant'}],
+        annotations:[{x:600, y:50, arrow:'down', tone:'default', body:'<b>1 secret = N tenants</b>'}]
+      },
+      {
+        id:2, chip:'Escena 2 · El ataque silencioso',
+        heading:'POST a /{tenant-cliente-A}/oauth2/v2.0/token. Owner no ve nada.',
+        narrative:'Attacker corre:<br/><code>POST https://login.microsoftonline.com/{tenant-cliente-A}/oauth2/v2.0/token</code><br/>con <code>grant_type=client_credentials</code> + <code>client_id=ABC</code> + <code>client_secret=XYZ</code> + <code>scope=https://graph.microsoft.com/.default</code>. Entra ID del cliente A valida: ¿existe el SP? ✓ ¿tiene permisos consentidos? ✓ → emite access token. Attacker llama Graph: <code>GET /users/{user}/messages</code>. Repite contra B, C, D... <b>El owner no ve esta actividad en sus propios sign-in logs</b> porque la auth ocurre en los tenants de los clientes.',
+        insight:'El sign-in queda en el log del tenant del cliente, NO del owner. Sin Workload ID Premium + Named Locations en el cliente, el SP del owner aparece sign-in desde Vladivostok a las 3am — pero no hay quien lo correlacione si el cliente no tiene IDP/CA para workload identities.',
+        introNodes:['cross-tenant-access','sign-in-logs'],
+        introEdges:[
+          {a:'service-principals', b:'sign-in-logs', t:'data', label:'logged in CLIENT tenant'},
+          {a:'cross-tenant-access', b:'service-principals', t:'policy', label:'allow/block partner SP'}
+        ],
+        annotations:[{x:430, y:50, arrow:'down', tone:'edge-policy', body:'<b>Sign-in en TENANT CLIENTE</b><br/><span class="muted">Owner ciego.</span>'}]
+      },
+      {
+        id:3, chip:'Escena 3 · Detección, contención, mitigación',
+        heading:'Workload ID Premium del cliente lo detecta. Owner migra a Federated Credentials.',
+        narrative:'<b>Workload ID Premium</b> aplicado en el tenant del cliente A: CA exige que el SP del owner solo firme desde Named Locations específicas. <b>Identity Protection (Workload)</b> emite "leaked credentials" (Microsoft threat intel detecta el secret en el dump) + "anomalous SP sign-in". <b>Risk-Based Policies</b> bloquea. <b>CAE</b> revoca tokens activos del SP en minutos. <b>Sentinel</b> correlaciona cross-tenant. Mitigación final del owner: rotar secret YA + migrar a <b>Federated Identity Credentials</b> (OIDC trust con GitHub Actions / Workload Identity Federation — sin secret = imposible filtrar).',
+        insight:'El owner es responsable de la cadena: rotación + revocación + migración a federated. Pero la PROTECCIÓN runtime depende del cliente (Workload ID Premium en SUS tenants). Sin esa capa, el cliente confía ciegamente en cualquier SP que consintió alguna vez.',
+        introNodes:['workload-id-premium','identity-protection','risk-policies','cae','named-locations','sentinel'],
+        introEdges:[
+          {a:'workload-id-premium', b:'service-principals', t:'policy', label:'CA for SPs'},
+          {a:'workload-id-premium', b:'identity-protection', t:'signal', label:'workload risk'},
+          {a:'named-locations', b:'workload-id-premium', t:'data', label:'allowed IPs'},
+          {a:'identity-protection', b:'risk-policies', t:'signal', label:'risky workload'},
+          {a:'risk-policies', b:'cae', t:'signal', label:'revoke tokens'},
+          {a:'sign-in-logs', b:'sentinel', t:'data', label:'forensics'}
+        ],
+        annotations:[
+          {x:770, y:50, arrow:'down', tone:'edge-policy', body:'<b>Workload ID Premium</b>'},
+          {x:430, y:200, arrow:'left', tone:'edge-signal', body:'<b>Federated Credentials = no secret</b>'}
+        ]
       }
     ]
   }

@@ -80,6 +80,12 @@ export const SCENARIO_GROUPS = [
         problem: 'Tras 3 años, el tenant tiene 800 service principals (200 sin uso en 90+ días) y los reviewers tardan semanas en cada ciclo de access review por volumen.',
         outcome: 'App Lifecycle Agent identifica SPs riesgosos/inactivos, dispara recertificaciones; Access Review Agent analiza usage + recomienda approve/remove decisions. Reviewer aprueba en lote. Cleanup en días, no semanas.',
         nodes: ['agent-app-lifecycle','agent-access-review','security-copilot','service-principals','access-reviews','entitlement-mgmt']
+      },
+      {
+        id: 'uc-multitenant-secret', title: 'Multi-tenant app secret compromise · ataque silencioso cross-tenant',
+        problem: 'El App Registration ABC del tenant Owner es multi-tenant (signInAudience: AzureADMultipleOrgs). Tenants Cliente A y B consintieron la app y crearon Service Principals con permisos Mail.Read + Files.Read.All. El client_secret XYZ se filtra (commit GitHub, log dump). El attacker NO ataca el App Registration del owner: ataca los Service Principals en los tenants de los clientes — POST a /{tenant-cliente}/oauth2/v2.0/token con grant_type=client_credentials → Entra del cliente valida que el SP existe + tiene permisos consentidos → emite token → API calls a Graph. El owner no ve actividad anómala porque toda la actividad ocurre en sign-in logs de los tenants clientes, no en el suyo.',
+        outcome: 'Workload ID Premium aplica CA al SP en cada tenant cliente. Named Locations restringe el SP a IPs/regiones esperadas (datacenter del owner). Identity Protection (Workload) emite "leaked credentials" + "anomalous SP sign-in" en el tenant del cliente. Risk-Based Policies bloquea. CAE revoca tokens activos. Cross-Tenant Access Settings del cliente puede bloquear el SP del owner explícitamente. Owner rota secret y migra a Federated Credentials (sin secret = sin leak posible).',
+        nodes: ['app-registrations','service-principals','cross-tenant-access','workload-id-premium','named-locations','identity-protection','risk-policies','cae','sign-in-logs','agent-app-lifecycle','sentinel']
       }
     ]
   },
