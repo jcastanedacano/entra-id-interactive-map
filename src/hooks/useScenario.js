@@ -95,7 +95,7 @@ function reducer(state, action) {
         const angle = (i / s.nodes.length) * Math.PI * 2
         nodes.push({ id, x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius })
       })
-      return { title: s.title, problem: s.problem || '', outcome: s.outcome || '', nodes, customEdges: [] }
+      return { id: s.id, title: s.title, problem: s.problem || '', outcome: s.outcome || '', nodes, customEdges: [] }
     }
     case 'reset': return init()
     default: return state

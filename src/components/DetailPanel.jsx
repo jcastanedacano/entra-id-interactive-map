@@ -5,6 +5,7 @@ import { CATEGORIES, COMPONENT_MAP } from '../data/components.js'
 import { EDGES } from '../data/edges.js'
 import { SUBTOPICS } from '../data/subtopics.js'
 import { COMPONENT_META, PHASES, coverageScore } from '../data/workloads.js'
+import { getMitreFor } from '../data/mitre.js'
 
 const EFFORT_COLOR = { Low: '#059669', Medium: '#D97706', High: '#DC2626' }
 const MT_COLOR = { Yes: '#059669', Partial: '#D97706', No: '#DC2626' }
@@ -121,6 +122,44 @@ function ScenarioFields({ scenario, setScenario, nodes, edges, copied, onShare, 
             ↻ Vaciar
           </button>
         </div>
+
+        {/* MITRE ATT&CK overlay — only when a pre-built scenario is loaded */}
+        {scenario.id && getMitreFor(scenario.id).length > 0 && (
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid #EEF0F3' }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#98A2B3', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+              MITRE ATT&CK
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {getMitreFor(scenario.id).map(t => {
+                const isAttack = t.role === 'attack'
+                const fg = isAttack ? '#B42318' : '#067647'
+                const bg = isAttack ? '#FEE4E2' : '#DCFAE6'
+                const border = isAttack ? '#FECDCA' : '#A6F4C5'
+                return (
+                  <a key={t.id} href={t.url} target="_blank" rel="noopener noreferrer"
+                    title={`${t.name} — Tactic: ${t.tactic} — ${isAttack ? 'ejecutado en este escenario' : 'mitigado por este escenario'}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 10.5, fontWeight: 600, padding: '3px 8px',
+                      borderRadius: 999, border: `1px solid ${border}`,
+                      background: bg, color: fg, textDecoration: 'none',
+                      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                      cursor: 'pointer', transition: 'transform .12s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <span style={{ opacity: 0.65, fontSize: 9 }}>{isAttack ? '⚔' : '🛡'}</span>
+                    <span>{t.id}</span>
+                    <span style={{ fontWeight: 500, fontFamily: 'Inter, system-ui, sans-serif', fontSize: 10 }}>{t.name}</span>
+                  </a>
+                )
+              })}
+            </div>
+            <div style={{ fontSize: 9.5, color: '#98A2B3', marginTop: 8, lineHeight: 1.4 }}>
+              <span style={{ color: '#B42318' }}>⚔ ataca</span> · <span style={{ color: '#067647' }}>🛡 defiende</span> · click → técnica oficial en attack.mitre.org
+            </div>
+          </div>
+        )}
 
         {/* Scenario metadata (collapsible-feel) */}
         <details style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid #EEF0F3' }}>
