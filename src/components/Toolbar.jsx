@@ -1,10 +1,11 @@
 import React from 'react'
-import { RotateCcw, Search, Layers, Flame, BookOpen, Radio, DollarSign } from 'lucide-react'
+import { RotateCcw, Search, Layers, Flame, BookOpen, Radio, DollarSign, GitCompare } from 'lucide-react'
 import { CATEGORIES } from '../data/components.js'
 import { SCENARIO_GROUPS } from '../data/scenarios.js'
 import { EDGE_TYPES } from '../data/edges.js'
 import { useBlastRadius } from '../hooks/useBlastRadius.js'
 import { useCostOverlay } from '../hooks/useCostOverlay.js'
+import { useCompare, clearCompare } from '../hooks/useCompare.js'
 
 const TABS = ['Story', 'Scenario', 'Grid', 'Graph', 'Mindmap']
 const CAT_FILTER_ORDER = ['core','access','governance','protection','workload','external','network','ecosystem']
@@ -28,6 +29,8 @@ export default function Toolbar(props) {
   const hideGlobalChrome = isStory || view === 'grid' || view === 'scenario' || view === 'graph' || view === 'mindmap'
   const { enabled: blastEnabled, toggle: toggleBlast } = useBlastRadius()
   const { enabled: costEnabled, toggle: toggleCost } = useCostOverlay()
+  const { ids: compareIds } = useCompare()
+  const compareActive = compareIds.length > 0
 
   return (
     <div className="flex flex-col" style={{ background: '#fff', borderBottom: `1px solid ${SV_DIVIDER}`, fontFamily: 'Inter, system-ui, sans-serif', boxShadow: '0 1px 0 #E4E7EC, 0 2px 8px rgba(15,23,42,0.04)' }}>
@@ -78,10 +81,38 @@ export default function Toolbar(props) {
           </button>
         )}
 
+        {/* Compare toggle — visible count badge; click clears the selection */}
+        {(view === 'graph' || view === 'grid') && (
+          <button onClick={compareActive ? clearCompare : undefined}
+            title={compareActive
+              ? `Compare activo · ${compareIds.length}/2 · click para limpiar`
+              : 'Compare: click derecho en cards de Graph/Grid para agregar (máx 2)'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginLeft: 4, padding: '6px 12px',
+              fontSize: 12, fontWeight: 600,
+              borderRadius: 8, cursor: compareActive ? 'pointer' : 'help',
+              border: `1px solid ${compareActive ? '#7C3AED' : SV_BORDER}`,
+              background: compareActive ? '#7C3AED' : '#fff',
+              color: compareActive ? '#fff' : '#475467',
+              transition: 'all .15s', userSelect: 'none'
+            }}>
+            <GitCompare size={13} />
+            <span>Compare</span>
+            {compareActive && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '1px 6px',
+                background: 'rgba(255,255,255,0.25)', borderRadius: 999,
+                fontFamily: 'JetBrains Mono, ui-monospace, monospace'
+              }}>{compareIds.length}/2</span>
+            )}
+          </button>
+        )}
+
         {/* Cost overlay toggle */}
         {(view === 'graph' || view === 'grid' || view === 'mindmap') && (
           <button onClick={toggleCost}
-            title={costEnabled ? 'Desactivar Cost overlay' : 'Mostrar precio USD/mes por componente (list price Microsoft)'}
+            title={costEnabled ? 'Desactivar Costo overlay' : 'Mostrar precio USD/mes por componente (list price Microsoft)'}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               marginLeft: 4, padding: '6px 12px',
@@ -93,7 +124,7 @@ export default function Toolbar(props) {
               transition: 'all .15s', userSelect: 'none'
             }}>
             <DollarSign size={13} />
-            <span>Cost</span>
+            <span>Costo</span>
           </button>
         )}
 

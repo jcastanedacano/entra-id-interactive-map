@@ -58,7 +58,11 @@
       "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/components/MindmapView.jsx\" \"C:/Aplicaciones/Map Interactive - Entra ID/src/components/MindmapView.jsx\")",
       "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/hooks/useBlastRadius.js\" \"C:/Aplicaciones/Map Interactive - Purview/src/hooks/useBlastRadius.js\")",
       "Bash(grep -nE \"import|function GridView|function DomainCard|isSelected = selectedId|let opacity = 0|let strokeW =|DomainCard$|isDimmed = dim|onSelect=\" \"C:/Aplicaciones/Map Interactive - Entra ID/src/components/GridView.jsx\")",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Feature: Cost overlay · USD/month list pricing per component *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Feature: Cost overlay · USD/month list pricing per component *)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist /FI \"PID eq 12920\")",
+      "Bash(wmic process *)",
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Toolbar: add Compare button + rename Cost → Costo \\(match Az Security layout\\) *)"
     ]
   }
 }
