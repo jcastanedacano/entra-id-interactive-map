@@ -1,8 +1,9 @@
 import React from 'react'
-import { RotateCcw, Search, Layers, Flame, BookOpen } from 'lucide-react'
+import { RotateCcw, Search, Layers, Flame, BookOpen, Radio } from 'lucide-react'
 import { CATEGORIES } from '../data/components.js'
 import { SCENARIO_GROUPS } from '../data/scenarios.js'
 import { EDGE_TYPES } from '../data/edges.js'
+import { useBlastRadius } from '../hooks/useBlastRadius.js'
 
 const TABS = ['Story', 'Scenario', 'Grid', 'Graph', 'Mindmap']
 const CAT_FILTER_ORDER = ['core','access','governance','protection','workload','external','network','ecosystem']
@@ -24,6 +25,7 @@ export default function Toolbar(props) {
   const isStory = view === 'story'
   // Grid + Scenario + Graph + Mindmap have their own self-contained chrome — hide redundant global chrome
   const hideGlobalChrome = isStory || view === 'grid' || view === 'scenario' || view === 'graph' || view === 'mindmap'
+  const { enabled: blastEnabled, toggle: toggleBlast } = useBlastRadius()
 
   return (
     <div className="flex flex-col" style={{ background: '#fff', borderBottom: `1px solid ${SV_DIVIDER}`, fontFamily: 'Inter, system-ui, sans-serif', boxShadow: '0 1px 0 #E4E7EC, 0 2px 8px rgba(15,23,42,0.04)' }}>
@@ -54,6 +56,25 @@ export default function Toolbar(props) {
             )
           })}
         </div>
+
+        {/* Blast Radius toggle — analytic views (Graph, Grid, Mindmap) only */}
+        {(view === 'graph' || view === 'grid' || view === 'mindmap') && (
+          <button onClick={toggleBlast}
+            title={blastEnabled ? 'Desactivar Blast Radius (Esc)' : 'Activar Blast Radius'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginLeft: 8, padding: '6px 12px',
+              fontSize: 12, fontWeight: 600,
+              borderRadius: 8, cursor: 'pointer',
+              border: `1px solid ${blastEnabled ? '#DC2626' : SV_BORDER}`,
+              background: blastEnabled ? '#DC2626' : '#fff',
+              color: blastEnabled ? '#fff' : '#475467',
+              transition: 'all .15s', userSelect: 'none'
+            }}>
+            <Radio size={13} />
+            <span>Blast Radius</span>
+          </button>
+        )}
 
         <div style={{ flex: 1 }}></div>
 

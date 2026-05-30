@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { COMPONENT_META, PHASES, coverageScore } from '../data/workloads.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
+import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -86,7 +87,7 @@ function buildLayout(grouped) {
 }
 
 // ── Card component ────────────────────────────────────────────────────────────
-function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimmed, onSelect }) {
+function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimmed, onSelect, blastHop }) {
   const cat = CATEGORIES[item.category]
   const rawPhase = COMPONENT_META[item.id]?.phase
   const phase = rawPhase ? Math.min(3, rawPhase) : null
@@ -97,6 +98,11 @@ function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimme
   let bg, borderColor, borderW
   if (overlay === 'deployment' && phaseTone) {
     bg = phaseTone.bg; borderColor = phaseTone.color; borderW = 2
+  } else if (blastHop != null && blastHop > 0) {
+    const hc = hopColor(blastHop)
+    bg = `${hc}10`; borderColor = hc; borderW = 2.5
+  } else if (blastHop === 0) {
+    bg = `${hopColor(0)}18`; borderColor = hopColor(0); borderW = 3
   } else if (overlay === 'heatmap') {
     const s = score
     bg = s >= 80 ? '#DCFAE6' : s >= 60 ? '#FEF0C7' : '#FEE4E2'
@@ -186,6 +192,25 @@ function bezierPath(sx, sy, tx, ty) {
 export default function GridView({ edgeFilter, categoryFilter, search, setSearch, overlay, setOverlay, selectedComponent, onSelectComponent }) {
   const selectedId = selectedComponent?.id || null
   const containerRef = useRef(null)
+
+  // ── Blast Radius mode ────────────────────────────────────────────────────
+  const { enabled: blastEnabled, setEnabled: setBlastEnabled } = useBlastRadius()
+  const blast = useMemo(() => {
+    if (!blastEnabled || !selectedId) return null
+    return bfsBlast(selectedId, EDGES, { propagatingFlows: PROPAGATING_FLOWS })
+  }, [blastEnabled, selectedId])
+  const blastActive = !!blast
+  useEffect(() => {
+    if (!blastEnabled) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setBlastEnabled(false)
+        onSelectComponent && onSelectComponent(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [blastEnabled, setBlastEnabled, onSelectComponent])
 
   const grouped = useMemo(() => {
     const g = {}
@@ -321,7 +346,13 @@ export default function GridView({ edgeFilter, categoryFilter, search, setSearch
             if (!selectedId && overlay === 'none') opacity = 0.06   // was 0.10
 
             const { d, lx, ly } = bezierPath(sp.x, sp.y, tp.x, tp.y)
-            const strokeW = et.strokeWidth * (isSelEdge ? 1.5 : 0.7)
+            let strokeW = et.strokeWidth * (isSelEdge ? 1.5 : 0.7)
+            // Blast Radius override: traversed edges pop, others fade hard.
+            if (blastActive) {
+              const inBlast = blast.traversedEdgeKeys.has(e.source + '→' + e.target)
+              opacity = inBlast ? 1 : 0.06
+              strokeW = inBlast ? et.strokeWidth * 2.0 : et.strokeWidth * 0.6
+            }
 
             const sourceItem = COMPONENT_MAP[e.source]
             const sourceCat = sourceItem?.category || ''
@@ -389,13 +420,15 @@ export default function GridView({ edgeFilter, categoryFilter, search, setSearch
             {row.items.map((item, k) => {
               const col = k % row.numCols
               const r = Math.floor(k / row.numCols)
+              const blastHop = blastActive ? blast.reachable.get(item.id) : undefined
+              const dimByBlast = blastActive && blastHop === undefined
               const isSelected = selectedId === item.id
               const isConnected = connectedIds?.has(item.id) && !isSelected
               const dimByCat = !!(categoryFilter && item.category !== categoryFilter)
               const dimBySel = !!(connectedIds && !connectedIds.has(item.id) && !isSelected)
               const sym = SYMBOLS[item.id] || item.name.slice(0, 2)
               const matchesSearch = !lower || item.name.toLowerCase().includes(lower) || sym.toLowerCase().includes(lower)
-              const isDimmed = dimByCat || dimBySel || (!!lower && !matchesSearch)
+              const isDimmed = dimByBlast || (!blastActive && (dimByCat || dimBySel || (!!lower && !matchesSearch)))
 
               return (
                 <div key={item.id} style={{
@@ -412,6 +445,7 @@ export default function GridView({ edgeFilter, categoryFilter, search, setSearch
                     isConnected={isConnected}
                     isDimmed={isDimmed}
                     onSelect={onSelectComponent}
+                    blastHop={blastHop}
                   />
                 </div>
               )

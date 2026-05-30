@@ -4,6 +4,7 @@ import * as Icons from 'lucide-react'
 import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
 import { COMPONENT_META, PHASES, coverageScore, heatColor } from '../data/workloads.js'
+import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
 import Tooltip from './Tooltip.jsx'
 
 const CARD_W = 130
@@ -52,6 +53,25 @@ function rectHullPath(pts, padding) {
 
 export default function GraphView({ edgeFilter, categoryFilter, search, setSearch, overlay, selectedComponent, onSelectComponent, toggleEdgeType }) {
   const selectedId = selectedComponent?.id || null
+
+  // ── Blast Radius mode ────────────────────────────────────────────────────
+  const { enabled: blastEnabled, setEnabled: setBlastEnabled } = useBlastRadius()
+  const blast = useMemo(() => {
+    if (!blastEnabled || !selectedId) return null
+    return bfsBlast(selectedId, EDGES, { propagatingFlows: PROPAGATING_FLOWS })
+  }, [blastEnabled, selectedId])
+  const blastActive = !!blast
+  useEffect(() => {
+    if (!blastEnabled) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setBlastEnabled(false)
+        onSelectComponent && onSelectComponent(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [blastEnabled, setBlastEnabled, onSelectComponent])
 
   // Degree map for node size + centrality panel
   const degreeMap = useMemo(() => {
@@ -351,7 +371,13 @@ export default function GraphView({ edgeFilter, categoryFilter, search, setSearc
               let opacity = dimmed ? 0.05 : baseOpacity
               if (otherSelected) opacity = 0.04
               else if (isSelectionEdge) opacity = 1.0
-              const strokeW = et.strokeWidth * (isPrimary ? 1 : 0.75) * (isSelectionEdge ? 1.8 : 1)
+              let strokeW = et.strokeWidth * (isPrimary ? 1 : 0.75) * (isSelectionEdge ? 1.8 : 1)
+              // Blast Radius override: traversed edges pop, others fade hard.
+              if (blastActive) {
+                const inBlast = blast.traversedEdgeKeys.has(srcId + '→' + tgtId)
+                opacity = inBlast ? 1.0 : 0.08
+                strokeW = inBlast ? et.strokeWidth * 2.2 : et.strokeWidth * 0.8
+              }
               // Quadratic bezier with 18px perpendicular offset (design package)
               const dx = tx - sx, dy = ty - sy
               const len = Math.sqrt(dx * dx + dy * dy) || 1
@@ -391,11 +417,18 @@ export default function GraphView({ edgeFilter, categoryFilter, search, setSearc
               // Use dragPos override when this node is being dragged
               const nx = (dragPos?.id === n.id) ? dragPos.x : (n.x ?? 0)
               const ny = (dragPos?.id === n.id) ? dragPos.y : (n.y ?? 0)
+              // Blast Radius encoding by hop distance
+              let blastHop = null, blastRing = null, blastOpacity = 1
+              if (blastActive) {
+                blastHop = blast.reachable.get(n.id)
+                if (blastHop === undefined) blastOpacity = 0.15
+                else blastRing = hopColor(blastHop)
+              }
               return (
                 <g key={n.id} data-id={n.id} className="gn"
                   transform={`translate(${nx},${ny})`}
-                  opacity={(dim(n.id) ? 0.15 : 1) * (isDimmedSel ? 0.32 : 1)}
-                  style={{ cursor: 'grab', transition: 'opacity .2s' }}
+                  opacity={blastActive ? blastOpacity : ((dim(n.id) ? 0.15 : 1) * (isDimmedSel ? 0.32 : 1))}
+                  style={{ cursor: 'grab', transition: 'opacity .35s' }}
                   onClick={(e) => {
                     e.stopPropagation()
                     setTooltip(null)   // dismiss hover tooltip on click
@@ -413,8 +446,21 @@ export default function GraphView({ edgeFilter, categoryFilter, search, setSearc
                   onMouseLeave={() => setTooltip(null)}
                 >
                   {/* Selection halo */}
-                  {isSelected && (
+                  {isSelected && !blastActive && (
                     <circle r={r + 8} fill="none" stroke="#2563EB" strokeWidth={3} strokeOpacity={0.25} />
+                  )}
+                  {/* Blast Radius rings */}
+                  {blastActive && isSelected && (
+                    <>
+                      <circle r={r + 14} fill="none" stroke={hopColor(0)} strokeWidth={2} strokeOpacity={0.35}>
+                        <animate attributeName="r" values={`${r+8};${r+22};${r+8}`} dur="2s" repeatCount="indefinite" />
+                        <animate attributeName="stroke-opacity" values="0.5;0.0;0.5" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                      <circle r={r + 6} fill="none" stroke={hopColor(0)} strokeWidth={3} strokeOpacity={0.7} />
+                    </>
+                  )}
+                  {blastActive && !isSelected && blastHop != null && (
+                    <circle r={r + 5} fill="none" stroke={blastRing} strokeWidth={2.5} strokeOpacity={0.85} />
                   )}
                   {/* Outer ring (white) */}
                   <circle r={r} fill="#fff"

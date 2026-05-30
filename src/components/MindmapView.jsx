@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
 import { MINDMAP_PRESETS, resolveItem } from '../data/mindmaps.js'
+import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
 import Tooltip from './Tooltip.jsx'
 
 // Design package palette
@@ -122,6 +123,25 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
   const layout = useMemo(() => buildLayoutFromPreset(preset), [preset])
   const selectedId = selectedComponent?.id || null
 
+  // ── Blast Radius mode (shared store with Toolbar + GraphView + GridView) ─
+  const { enabled: blastEnabled, setEnabled: setBlastEnabled } = useBlastRadius()
+  const blast = useMemo(() => {
+    if (!blastEnabled || !selectedId) return null
+    return bfsBlast(selectedId, EDGES, { propagatingFlows: PROPAGATING_FLOWS })
+  }, [blastEnabled, selectedId])
+  const blastActive = !!blast
+  useEffect(() => {
+    if (!blastEnabled) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setBlastEnabled(false)
+        onSelectComponent && onSelectComponent(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [blastEnabled, setBlastEnabled, onSelectComponent])
+
   // Pan/zoom
   useEffect(() => {
     const svg = d3.select(svgRef.current)
@@ -172,7 +192,12 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
     const dimSel = selectedId && !isSel && !isConn
     const dimSearch = !matchesSearch(item)
     const dimCat = !catActive(item.cat)
-    const op = dimCat ? 0.18 : (dimSearch ? 0.20 : (dimSel ? 0.30 : 1))
+    // Blast Radius overrides regular dim logic. Reachable cards (origin + downstream)
+    // stay fully visible and get a hopColor accent; unreachable cards fade hard.
+    const blastHop = blastActive ? blast.reachable.get(item.id) : undefined
+    const blastTint = blastActive && blastHop != null ? hopColor(blastHop) : null
+    const dimByBlast = blastActive && blastHop === undefined
+    const op = dimByBlast ? 0.13 : (dimCat ? 0.18 : (dimSearch ? 0.20 : (dimSel ? 0.30 : 1)))
     return (
       <g
         transform={`translate(${x - CARD_W/2},${y - CARD_H/2})`}
@@ -193,10 +218,10 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
       >
         <rect
           x={0} y={0} width={CARD_W} height={CARD_H} rx={9}
-          fill={isConn ? `${c.color}22` : '#FFFFFF'}
-          stroke={isSel ? MP.selection : c.color}
-          strokeOpacity={isSel ? 1 : (isConn ? 0.95 : 0.55)}
-          strokeWidth={isSel ? 2 : (isConn ? 1.8 : 1.2)}
+          fill={blastTint ? `${blastTint}18` : (isConn ? `${c.color}22` : '#FFFFFF')}
+          stroke={blastTint ? blastTint : (isSel ? MP.selection : c.color)}
+          strokeOpacity={blastTint ? 1 : (isSel ? 1 : (isConn ? 0.95 : 0.55))}
+          strokeWidth={blastTint ? (blastHop === 0 ? 3 : 2.5) : (isSel ? 2 : (isConn ? 1.8 : 1.2))}
           strokeDasharray={dashed && !isSel && !isConn ? '5 3' : undefined}
           style={{ filter: isSel
             ? `drop-shadow(0 4px 12px ${MP.selection}33)`
@@ -379,6 +404,13 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
             const c = CATS[f.cat] || { color: MP.ink3, bg: '#F2F4F7', label: f.cat }
             const dim = !catActive(f.cat)
             const label = f.label || c.label || f.cat
+            // Auto-shrink long labels so they never spill out of the FAMILY_W rounded rect.
+            // Budget ≈ FAMILY_W - 24px padding; uppercase Inter@11 with 0.08em tracking
+            // works out to roughly 7.6px/char. Stepdown to 9.5/8.5 covers 30+ char labels
+            // like "PLAN 2 · VULNERABILITY ASSESSMENT".
+            const len = label.length
+            const fontSize = len <= 18 ? 10.5 : len <= 26 ? 9.5 : len <= 34 ? 8.5 : 7.8
+            const tracking = len <= 18 ? '0.08em' : '0.04em'
             return (
               <g key={'fam-'+f.cat+'-'+f.familyCenter.y}
                 transform={`translate(${f.familyCenter.x - FAMILY_W/2},${f.familyCenter.y - FAMILY_H/2})`}
@@ -386,8 +418,8 @@ export default function MindmapView({ edgeFilter, categoryFilter, search, setSea
                 <rect x={0} y={0} width={FAMILY_W} height={FAMILY_H} rx={FAMILY_H/2}
                   fill={c.bg} stroke={c.color} strokeWidth={1.5} />
                 <text x={FAMILY_W/2} y={FAMILY_H/2 + 4}
-                  textAnchor="middle" fontSize="10.5" fontWeight="700"
-                  fill={c.color} letterSpacing="0.08em"
+                  textAnchor="middle" fontSize={fontSize} fontWeight="700"
+                  fill={c.color} letterSpacing={tracking}
                   style={{ fontFamily: 'Inter, system-ui, sans-serif', textTransform: 'uppercase' }}>
                   {label}
                 </text>

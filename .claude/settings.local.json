@@ -49,7 +49,15 @@
       "WebFetch(domain:msicons.com)",
       "WebSearch",
       "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Upgrade groups + entitlement-mgmt with proper SVGs from msicons.com *)",
-      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add multi-tenant app secret compromise scenario + story *)"
+      "Bash(git -c user.name=jcastanedacano -c user.email=jorge@itdemos.com commit -m 'Add multi-tenant app secret compromise scenario + story *)",
+      "Bash(grep -c 'blast\\\\|Blast' 'C:/Aplicaciones/Map Interactive - Purview/src/components/__TRACKED_VAR__.jsx')",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/hooks/useBlastRadius.js\" \"C:/Aplicaciones/Map Interactive - Defender/src/hooks/useBlastRadius.js\")",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/hooks/useBlastRadius.js\" \"C:/Aplicaciones/Map Interactive - Entra ID/src/hooks/useBlastRadius.js\")",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/components/MindmapView.jsx\" \"C:/Aplicaciones/Map Interactive - Defender/src/components/MindmapView.jsx\")",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/components/MindmapView.jsx\" \"C:/Aplicaciones/Map Interactive - Purview/src/components/MindmapView.jsx\")",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/components/MindmapView.jsx\" \"C:/Aplicaciones/Map Interactive - Entra ID/src/components/MindmapView.jsx\")",
+      "Bash(cp \"C:/Aplicaciones/Map Interactive - Azure Security/src/hooks/useBlastRadius.js\" \"C:/Aplicaciones/Map Interactive - Purview/src/hooks/useBlastRadius.js\")",
+      "Bash(grep -nE \"import|function GridView|function DomainCard|isSelected = selectedId|let opacity = 0|let strokeW =|DomainCard$|isDimmed = dim|onSelect=\" \"C:/Aplicaciones/Map Interactive - Entra ID/src/components/GridView.jsx\")"
     ]
   }
 }
