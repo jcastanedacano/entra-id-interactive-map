@@ -4,6 +4,8 @@ import { COMPONENT_META, PHASES, coverageScore } from '../data/workloads.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
 import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
 import { toggleCompareId } from '../hooks/useCompare.js'
+import { useCostOverlay } from '../hooks/useCostOverlay.js'
+import { formatPrice } from '../data/pricing.js'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -89,6 +91,8 @@ function buildLayout(grouped) {
 
 // ── Card component ────────────────────────────────────────────────────────────
 function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimmed, onSelect, blastHop }) {
+  const { enabled: costEnabled } = useCostOverlay()
+  const priceBadge = costEnabled ? formatPrice(item.id) : null
   const cat = CATEGORIES[item.category]
   const rawPhase = COMPONENT_META[item.id]?.phase
   const phase = rawPhase ? Math.min(3, rawPhase) : null
@@ -168,8 +172,19 @@ function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimme
         </div>
       </div>
 
-      {/* Bottom: coverage bar */}
-      {overlay === 'none' && (
+      {/* Bottom: coverage bar OR cost badge (when overlay active) */}
+      {priceBadge ? (
+        <div title={priceBadge.full}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 7,
+            padding: '2px 6px', borderRadius: 4, background: `${priceBadge.color}15`, border: `1px solid ${priceBadge.color}55` }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: priceBadge.color, fontFamily: 'JetBrains Mono, ui-monospace, monospace' }}>
+            {priceBadge.label}
+          </span>
+          <span style={{ fontSize: 8.5, color: priceBadge.color, opacity: 0.8, textAlign: 'right', lineHeight: 1.1 }}>
+            {priceBadge.detail}
+          </span>
+        </div>
+      ) : overlay === 'none' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
           <div style={{ flex: 1, height: 3, background: `${borderColor}25`, borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ width: `${score}%`, height: '100%', background: borderColor }} />

@@ -1,9 +1,10 @@
 import React from 'react'
-import { RotateCcw, Search, Layers, Flame, BookOpen, Radio } from 'lucide-react'
+import { RotateCcw, Search, Layers, Flame, BookOpen, Radio, DollarSign } from 'lucide-react'
 import { CATEGORIES } from '../data/components.js'
 import { SCENARIO_GROUPS } from '../data/scenarios.js'
 import { EDGE_TYPES } from '../data/edges.js'
 import { useBlastRadius } from '../hooks/useBlastRadius.js'
+import { useCostOverlay } from '../hooks/useCostOverlay.js'
 
 const TABS = ['Story', 'Scenario', 'Grid', 'Graph', 'Mindmap']
 const CAT_FILTER_ORDER = ['core','access','governance','protection','workload','external','network','ecosystem']
@@ -26,6 +27,7 @@ export default function Toolbar(props) {
   // Grid + Scenario + Graph + Mindmap have their own self-contained chrome — hide redundant global chrome
   const hideGlobalChrome = isStory || view === 'grid' || view === 'scenario' || view === 'graph' || view === 'mindmap'
   const { enabled: blastEnabled, toggle: toggleBlast } = useBlastRadius()
+  const { enabled: costEnabled, toggle: toggleCost } = useCostOverlay()
 
   return (
     <div className="flex flex-col" style={{ background: '#fff', borderBottom: `1px solid ${SV_DIVIDER}`, fontFamily: 'Inter, system-ui, sans-serif', boxShadow: '0 1px 0 #E4E7EC, 0 2px 8px rgba(15,23,42,0.04)' }}>
@@ -73,6 +75,25 @@ export default function Toolbar(props) {
             }}>
             <Radio size={13} />
             <span>Blast Radius</span>
+          </button>
+        )}
+
+        {/* Cost overlay toggle */}
+        {(view === 'graph' || view === 'grid' || view === 'mindmap') && (
+          <button onClick={toggleCost}
+            title={costEnabled ? 'Desactivar Cost overlay' : 'Mostrar precio USD/mes por componente (list price Microsoft)'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginLeft: 4, padding: '6px 12px',
+              fontSize: 12, fontWeight: 600,
+              borderRadius: 8, cursor: 'pointer',
+              border: `1px solid ${costEnabled ? '#059669' : SV_BORDER}`,
+              background: costEnabled ? '#059669' : '#fff',
+              color: costEnabled ? '#fff' : '#475467',
+              transition: 'all .15s', userSelect: 'none'
+            }}>
+            <DollarSign size={13} />
+            <span>Cost</span>
           </button>
         )}
 
