@@ -5,6 +5,7 @@ import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
 import { COMPONENT_META, PHASES, coverageScore, heatColor } from '../data/workloads.js'
 import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
+import { toggleCompareId } from '../hooks/useCompare.js'
 import Tooltip from './Tooltip.jsx'
 
 const CARD_W = 130
@@ -444,6 +445,7 @@ export default function GraphView({ edgeFilter, categoryFilter, search, setSearc
                   onMouseEnter={(e) => { if (!selectedId) setTooltip({ x: e.clientX, y: e.clientY, component: n }) }}
                   onMouseMove={(e) => { if (!selectedId) setTooltip({ x: e.clientX, y: e.clientY, component: n }) }}
                   onMouseLeave={() => setTooltip(null)}
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); toggleCompareId(n.id) }}
                 >
                   {/* Selection halo */}
                   {isSelected && !blastActive && (

@@ -8,6 +8,7 @@ import MindmapView from './components/MindmapView.jsx'
 import StoryView from './components/StoryView.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import EdgeLegend from './components/EdgeLegend.jsx'
+import CompareDrawer from './components/CompareDrawer.jsx'
 import { useScenario } from './hooks/useScenario.js'
 import { EDGE_TYPES } from './data/edges.js'
 
@@ -138,6 +139,8 @@ export default function App() {
           />
         )}
       </div>
+      {/* Global compare drawer — visible whenever 1+ component is picked via right-click in Graph/Grid */}
+      <CompareDrawer />
     </div>
   )
 }

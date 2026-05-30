@@ -3,6 +3,7 @@ import { COMPONENTS, COMPONENT_MAP, CATEGORIES } from '../data/components.js'
 import { COMPONENT_META, PHASES, coverageScore } from '../data/workloads.js'
 import { EDGES, EDGE_TYPES } from '../data/edges.js'
 import { useBlastRadius, bfsBlast, hopColor, PROPAGATING_FLOWS } from '../hooks/useBlastRadius.js'
+import { toggleCompareId } from '../hooks/useCompare.js'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -118,6 +119,7 @@ function DomainCard({ item, atomicNum, overlay, isSelected, isConnected, isDimme
   return (
     <div
       onClick={e => { e.stopPropagation(); onSelect(isSelected ? null : item) }}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); toggleCompareId(item.id) }}
       style={{
         position: 'absolute',
         left: 0, top: 0, width: CARD_W, height: CARD_H,
